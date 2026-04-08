@@ -26,22 +26,17 @@ async def test_oss():
     from core.minio import oss
 
     # 下载
-    all_files = oss.list_objects(prefix='audio/')
-    print(all_files)
-    for file_key in all_files[:2]:
-        print(file_key)
-        os.makedirs(os.path.dirname(file_key), exist_ok=True)
-        oss.download_file(file_key, file_key)
+    # all_files = oss.list_objects(prefix='')
+    # print(all_files)
+    # for file_key in all_files[:2]:
+    #     print(file_key)
+    #     oss.download_file(file_key, file_key)
     # 上传
-    objs = os.listdir('./audio')
-    for obj in objs:
-        audio_key = f'audio/{obj}'
-        await oss.upload_file_async(audio_key, file_path=audio_key, content_type='audio/mpeg')
-        print(f'{obj} done')
+    oss.upload_file('test/run.sh', 'run.sh')
     # 设置public-read
     # oss.set_bucket_public_read()
 
 
 if __name__ == '__main__':
-    test_user()
+    # test_user()
     asyncio.run(test_oss())
