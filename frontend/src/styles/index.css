@@ -1,0 +1,14 @@
+/* 路由过度动画 */
+.fade-x-enter-active {
+  transition: all 0.5s ease-out;
+}
+.fade-x-leave-active {
+  transition: all 0;
+}
+.fade-x-enter-from {
+  transform: translateX(50px);
+  opacity: 0;
+}
+.fade-x-leave-from {
+  opacity: 0;
+}
