@@ -128,7 +128,7 @@ cp app/.env.example app/.env
 
 # 启动服务
 cd app
-uv run python main.py
+sh run.sh
 ```
 
 后端启动后访问 API 文档：http://localhost:3002/docs
@@ -151,9 +151,8 @@ pnpm dev
 
 前端启动后访问：http://localhost:8078
 
-## 常用命令
+### 4. 前端常用命令
 
-### 前端
 
 ```bash
 pnpm dev        # 启动开发服务器
@@ -161,12 +160,4 @@ pnpm build      # 生产构建
 pnpm preview    # 预览构建产物
 pnpm lint       # ESLint 代码检查
 pnpm format     # Prettier 格式化
-```
-
-### 后端
-
-```bash
-uv run python main.py   # 启动服务
-aerich migrate          # 生成数据库迁移
-aerich upgrade          # 执行数据库迁移
 ```
