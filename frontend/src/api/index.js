@@ -5,8 +5,10 @@ export default {
   // 用户相关
   refresh: () => request.post('/base/refresh_token'),
   getUserInfo: () => request.get('/base/userinfo'),
-  phoneLogin: data => request.post('/base/phone_login', data),
-  phoneRegister: data => request.post('/base/phone_register', data),
+  emailLogin: data => request.post('/base/email_login', data),
+  emailRegister: data => request.post('/base/register', data),
+  sendVerifyCode: data => request.post('/base/verifycode', data),
+  forgotPassword: data => request.post('/base/forgot_password', data),
   updateUserInfo: (data = {}) => request.post('/user/update', data),
   fetchRoles: () => request.get('/base/user_roles'),
   // 产品相关

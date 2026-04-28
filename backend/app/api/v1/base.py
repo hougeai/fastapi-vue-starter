@@ -9,7 +9,7 @@ from core.verifycode import RedisManager
 from controllers import user_controller
 from models.user import Role, Api, Menu, RoleApi, RoleMenu
 from schemas.base import Fail, Success
-from schemas.login import JWTPayload, JWTOut, PhoneLogin, PhoneRegister
+from schemas.login import JWTPayload, JWTOut, EmailLogin, VerifyCodeRequest, RegisterRequest
 from schemas.user import UserCreate
 
 router = APIRouter()
@@ -159,42 +159,59 @@ async def get_user_api():
     return Success(data=apis)
 
 
-# 手机号注册相关
-@router.post('/phone_code', summary='发送验证码')
-async def send_phone_code(request: PhoneRegister):
+@router.post('/email_login', summary='邮箱登录')
+async def email_login(request: EmailLogin):
+    user = await user_controller.authenticate(request)
+    await user_controller.update_last_login(user.user_id)
+    return generate_token_response(user, remember=request.remember)
+
+
+# 用户邮箱注册相关API
+@router.post('/verifycode', summary='发送验证码')
+async def send_verify_code(request: VerifyCodeRequest):
+    # 检查正常用户中邮箱是否已注册，注销用户可以继续用这个邮箱
+    user = await user_controller.get_by_email(request.email, is_del=False)
+    if user:
+        return Fail(msg='邮箱已注册')
     # 发送验证码
-    success, msg = await code_manager.generate_phone_code(request.phone)
+    success, msg = await code_manager.generate_code(request.email)
     if not success:
         return Fail(msg=msg)
     return Success(msg=msg)
 
 
-@router.post('/phone_login', summary='手机号登录')
-async def phone_login(request: PhoneLogin):
-    # 验证用户名和密码
-    user = await user_controller.authenticate(request)
-    return generate_token_response(user, request.remember)
-
-
-@router.post('/phone_register', summary='手机号注册')
-async def phone_register(request: PhoneRegister):
+@router.post('/register', summary='用户注册')
+async def register(request: RegisterRequest):
     # 验证验证码
-    success, msg = await code_manager.verify_phone_code(request.phone, request.code)
+    success, msg = await code_manager.verify_code(request.email, request.verification_code)
     if not success:
         return Fail(msg=msg)
-    # 验证手机号是否已注册
-    user = await user_controller.get_by_phone(request.phone)
+    # 发送验证码时已验证过邮箱，先查询是否是is_del；如果不存在user说明是新用户，存在则是注销用户，需要恢复
+    user = await user_controller.get_by_email(request.email, is_del=True)
     if not user:
-        # 注册新用户
         obj = UserCreate(
-            user_name='手机注册用户',
-            phone=request.phone,
+            user_name=request.user_name or request.email.split('@')[0],
+            email=request.email,
+            password=request.password,
             inviter_id=request.inviter_id,
         )
         user = await user_controller.create_user(obj)
-    if user.is_del:
-        # 注销用户恢复
-        await user_controller.update(id=user.id, obj_in={'is_del': False})
-    # 更新最后登录时间
-    await user_controller.update_last_login(user.user_id)
-    return generate_token_response(user, request.remember)
+    else:
+        from core.security import get_password_hash
+        await user_controller.update(
+            id=user.id,
+            obj_in={'is_del': False, 'user_name': request.user_name or request.email.split('@')[0], 'password': get_password_hash(request.password)},
+        )
+    return Success(msg='注册成功')
+
+
+@router.post('/forgot_password', summary='忘记密码')
+async def forgot_password(request: VerifyCodeRequest):
+    user = await user_controller.get_by_email(request.email)
+    if not user:
+        return Fail(msg='邮箱未注册')
+    # 使用Redis管理器生成重置令牌并发送重置密码链接
+    success, msg = await code_manager.generate_reset_token(request.email)
+    if not success:
+        return Fail(msg=msg)
+    return Success(msg=msg)

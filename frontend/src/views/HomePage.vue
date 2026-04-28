@@ -39,7 +39,7 @@ const cases = [
 
     <!-- 主视觉横幅 -->
     <section class="relative h-60 md:h-80 bg-black rounded-2xl overflow-hidden mb-12 mx-6">
-      <img src="@/assets/img/banner.webp" alt="AI Agent 应用" class="w-full h-full object-cover" />
+      <img src="@/assets/img/avatar.webp" alt="AI Agent 应用" class="w-full h-full object-cover" />
       <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
         <div class="text-center text-white px-6">
           <h2 class="text-3xl md:text-4xl font-bold mb-2">

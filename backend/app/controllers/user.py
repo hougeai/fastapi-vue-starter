@@ -22,7 +22,7 @@ from schemas.user import (
     MenuCreate,
     MenuUpdate,
 )
-from schemas.login import PhoneLogin
+from schemas.login import EmailLogin
 from .crud import CRUDBase
 
 
@@ -51,8 +51,8 @@ class UserController(CRUDBase[User, UserCreate, UserUpdate]):
         user.last_login = datetime.now(timezone.utc)
         await user.save()
 
-    async def authenticate(self, request: PhoneLogin) -> Optional[User]:
-        user = await self.model.filter(phone=request.phone).first()
+    async def authenticate(self, request: EmailLogin) -> Optional[User]:
+        user = await self.model.filter(email=request.email).first()
         if not user:
             raise HTTPException(status_code=400, detail='邮箱未注册！')
         verified = verify_password(request.password, user.password)

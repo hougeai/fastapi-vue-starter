@@ -14,20 +14,20 @@
         登录您的账号开始使用{{ getConfig('projectName') }}
       </div>
       <a-tabs v-model:active-key="activeTab" type="line" class="w-full">
-        <!-- 手机登录 -->
-        <a-tab-pane key="phone" title="手机登录">
+        <!-- 邮箱登录 -->
+        <a-tab-pane key="email" title="邮箱登录">
           <a-form
-            ref="phoneFormRef"
-            :model="phoneForm"
-            :rules="phoneRules"
+            ref="emailFormRef"
+            :model="emailForm"
+            :rules="emailRules"
             layout="vertical"
-            @submit="handlePhoneLogin"
+            @submit="handleEmailLogin"
             class="mt-4"
           >
-            <a-form-item field="phone" class="mb-6" hide-label>
+            <a-form-item field="email" class="mb-6" hide-label>
               <a-input
-                v-model="phoneForm.phone"
-                placeholder="手机号"
+                v-model="emailForm.email"
+                placeholder="邮箱"
                 allow-clear
                 size="large"
                 class="h-12 text-18px"
@@ -35,7 +35,7 @@
             </a-form-item>
             <a-form-item field="password" class="mb-6" hide-label>
               <a-input-password
-                v-model="phoneForm.password"
+                v-model="emailForm.password"
                 placeholder="密码"
                 allow-clear
                 size="large"
@@ -43,7 +43,7 @@
               />
             </a-form-item>
             <a-form-item class="mb-0">
-              <a-checkbox v-model="phoneForm.remember">记住我</a-checkbox>
+              <a-checkbox v-model="emailForm.remember">记住我</a-checkbox>
             </a-form-item>
             <a-form-item>
               <a-button
@@ -77,10 +77,10 @@
             @submit="handleRegister"
             class="mt-4"
           >
-            <a-form-item field="phone" class="mb-6" hide-label>
+            <a-form-item field="email" class="mb-6" hide-label>
               <a-input
-                v-model="registerForm.phone"
-                placeholder="手机号"
+                v-model="registerForm.email"
+                placeholder="邮箱"
                 allow-clear
                 size="large"
                 class="h-12 text-18px"
@@ -137,7 +137,7 @@
             </a-form-item>
           </a-form>
           <div class="flex justify-between text-16px mt-4 px-2">
-            <a @click="activeTab = 'phone'" class="text-blue-500 cursor-pointer underline"
+            <a @click="activeTab = 'email'" class="text-blue-500 cursor-pointer underline"
               >已有账号？去登录</a
             >
           </div>
@@ -153,10 +153,10 @@
             @submit="handleForgotPassword"
             class="mt-4"
           >
-            <a-form-item field="phone" class="mb-6" hide-label>
+            <a-form-item field="email" class="mb-6" hide-label>
               <a-input
-                v-model="forgotForm.phone"
-                placeholder="手机号"
+                v-model="forgotForm.email"
+                placeholder="邮箱"
                 allow-clear
                 size="large"
                 class="h-12 text-18px"
@@ -205,40 +205,40 @@ const { query } = useRoute()
 const router = useRouter()
 
 const loading = ref(false)
-const activeTab = ref('phone')
+const activeTab = ref('email')
 
 // 验证码相关状态
 const isCodeButtonDisabled = ref(false)
 const codeButtonText = ref('发送验证码')
 let countdownTimer = null
 
-const phoneForm = ref({
-  phone: '',
+const emailForm = ref({
+  email: '',
   password: '',
   remember: false
 })
 
 const registerForm = ref({
-  phone: '',
+  email: '',
   password: '',
   confirmPassword: '',
   verificationCode: ''
 })
 
 const forgotForm = ref({
-  phone: ''
+  email: ''
 })
 
 // 表单 ref
-const phoneFormRef = ref()
+const emailFormRef = ref()
 const registerFormRef = ref()
 const forgotFormRef = ref()
 
 // 统一的 rules（使用 async-validator 规则格式）
-const phoneRules = {
-  phone: [
-    { required: true, message: '请输入手机号', trigger: 'blur' },
-    { match: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: ['blur', 'change'] }
+const emailRules = {
+  email: [
+    { required: true, message: '请输入邮箱', trigger: 'blur' },
+    { type: 'email', message: '请输入正确的邮箱', trigger: ['blur', 'change'] }
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
@@ -258,9 +258,9 @@ const phoneRules = {
 }
 
 const registerRules = {
-  phone: [
-    { required: true, message: '请输入手机号', trigger: 'blur' },
-    { match: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: ['blur', 'change'] }
+  email: [
+    { required: true, message: '请输入邮箱', trigger: 'blur' },
+    { type: 'email', message: '请输入正确的邮箱', trigger: ['blur', 'change'] }
   ],
   verificationCode: [
     { required: true, message: '请输入验证码', trigger: 'blur' },
@@ -308,10 +308,10 @@ watch(
   () => props.visible,
   val => {
     if (val) {
-      activeTab.value = 'phone'
-      phoneForm.value = { phone: '', password: '', remember: false }
+      activeTab.value = 'email'
+      emailForm.value = { email: '', password: '', remember: false }
       registerForm.value = {
-        phone: '',
+        email: '',
         password: '',
         confirmPassword: '',
         verificationCode: ''
@@ -320,15 +320,15 @@ watch(
   }
 )
 
-const handlePhoneLogin = async () => {
-  const errors = await phoneFormRef.value.validate()
+const handleEmailLogin = async () => {
+  const errors = await emailFormRef.value.validate()
   if (errors) return
   loading.value = true
   try {
-    const res = await api.phoneLogin({
-      phone: phoneForm.value.phone,
-      password: phoneForm.value.password.toString(),
-      remember: phoneForm.value.remember
+    const res = await api.emailLogin({
+      email: emailForm.value.email,
+      password: emailForm.value.password.toString(),
+      remember: emailForm.value.remember
     })
     await handleLoginSuccess(res)
     AMessage.success('登录成功')
@@ -346,18 +346,18 @@ const handleRegister = async () => {
   loading.value = true
   try {
     const data = {
-      phone: registerForm.value.phone.trim(),
+      email: registerForm.value.email.trim(),
       password: registerForm.value.password,
       verification_code: registerForm.value.verificationCode
     }
     if (query.i) {
       data.inviter_id = query.i
     }
-    await api.phoneRegister(data)
+    await api.emailRegister(data)
     AMessage.success('注册成功，请登录')
-    activeTab.value = 'phone'
-    phoneForm.value.phone = registerForm.value.phone
-    phoneForm.value.password = ''
+    activeTab.value = 'email'
+    emailForm.value.email = registerForm.value.email
+    emailForm.value.password = ''
   } catch (e) {
     AMessage.error(e?.message || '注册失败')
   } finally {
@@ -386,9 +386,9 @@ const handleForgotPassword = async () => {
   if (errors) return
   loading.value = true
   try {
-    await api.forgotPassword({ email: forgotForm.value.phone })
+    await api.forgotPassword({ email: forgotForm.value.email })
     AMessage.success('重置链接已发送到您的邮箱，请注意查收')
-    activeTab.value = 'phone'
+    activeTab.value = 'email'
   } catch (e) {
     AMessage.error(e?.message || '发送失败')
   } finally {

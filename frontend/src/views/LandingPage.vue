@@ -25,8 +25,19 @@ watch(
     if (newQuery.redirect) {
       showLoginDialog.value = true
     }
-  }
+  },
+  { immediate: true }
 )
+
+// 点击"立即开始"：已登录则跳转 /home，未登录则弹出登录框
+const handleStart = () => {
+  const token = localStorage.getItem('access_token')
+  if (token) {
+    router.push('/home')
+  } else {
+    showLoginDialog.value = true
+  }
+}
 
 const handleLoginCancel = () => {
   // 如果 URL 中有 redirect 参数，取消时应该移除它
@@ -158,7 +169,7 @@ onMounted(() => {
           >
         </div>
         <div class="hero-buttons">
-          <a-button type="primary" size="large" @click="$router.push('/home')" class="cta-button">
+          <a-button type="primary" size="large" @click="handleStart" class="cta-button">
             <template #icon>
               <IconRocket />
             </template>
@@ -250,7 +261,7 @@ onMounted(() => {
           <a-button
             type="primary"
             size="large"
-            @click="$router.push('/home')"
+            @click="handleStart"
             class="cta-main-button"
           >
             <template #icon>

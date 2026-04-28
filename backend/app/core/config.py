@@ -40,6 +40,15 @@ class Settings(BaseSettings):
     SUPER_ADMIN_NAME: str = os.getenv('SUPER_ADMIN_NAME', '')
     SUPER_ADMIN_PHONE: str = os.getenv('SUPER_ADMIN_PHONE', '')
     SUPER_ADMIN_PASSWORD: str = os.getenv('SUPER_ADMIN_PASSWORD', '')
+    # 邮件服务配置
+    EMAIL_HOST: str = os.getenv('EMAIL_HOST', '')
+    EMAIL_PORT: int = int(os.getenv('EMAIL_PORT', 465))
+    EMAIL_USER: str = os.getenv('EMAIL_USER', '')
+    EMAIL_PASSWORD: str = os.getenv('EMAIL_PASSWORD', '')
+    EMAIL_SENDER: str = os.getenv('EMAIL_SENDER', '')
+    # 其他配置
+    LOGO_NAME: str = os.getenv('LOGO_NAME', 'App')
+    INVITE_REWARD: float = float(os.getenv('INVITE_REWARD', 0))
     # 数据库配置
     TORTOISE_ORM: dict = {
         'connections': {
