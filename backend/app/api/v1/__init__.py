@@ -7,6 +7,8 @@ from .roles import router as roles_router
 from .apis import router as apis_router
 from .menus import router as menus_router
 from .auditlog import router as auditlog_router
+from .ledger import router as ledger_router
+from .transaction import router as transaction_router
 
 
 v1_router = APIRouter()
@@ -17,3 +19,6 @@ v1_router.include_router(roles_router, tags=['角色模块'], prefix='/role', de
 v1_router.include_router(apis_router, tags=['API模块'], prefix='/api', dependencies=[DependPermisson])
 v1_router.include_router(menus_router, tags=['菜单模块'], prefix='/menu', dependencies=[DependPermisson])
 v1_router.include_router(auditlog_router, tags=['审计日志模块'], prefix='/auditlog', dependencies=[DependPermisson])
+
+v1_router.include_router(ledger_router, tags=['账本模块'], prefix='/ledger')
+v1_router.include_router(transaction_router, tags=['交易模块'], prefix='/transaction')

@@ -6,6 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from tortoise.expressions import Q
 from api import api_router
 from models.user import Api, Role, RoleApi
+from models.ledger import Category
+from models.enums import SYSTEM_CATEGORIES
 from schemas.user import UserCreate
 from controllers import api_controller, user_controller
 from .exceptions import (
@@ -145,8 +147,28 @@ async def init_superuser():
         )
 
 
+async def init_system_categories():
+    """初始化系统预设类别到数据库"""
+    for cat_data in SYSTEM_CATEGORIES:
+        exists = await Category.filter(
+            user_id__isnull=True,
+            name=cat_data['name'],
+            is_system=True,
+        ).exists()
+        if not exists:
+            await Category.create(
+                user_id=None,  # 系统预设
+                name=cat_data['name'],
+                tx_type=cat_data['tx_type'],
+                icon=cat_data.get('icon'),
+                is_system=True,
+                order=cat_data.get('order', 0),
+            )
+
+
 async def init_data(app: FastAPI):
     await init_db()
     await init_apis(app)
     await init_roles()
     await init_superuser()
+    await init_system_categories()

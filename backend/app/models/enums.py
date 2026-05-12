@@ -73,3 +73,38 @@ class ContentStrategy(str, Enum):
     INTERACTIVE = 'interactive'  # 互动活跃
     PROMOTION = 'promotion'  # 促销转化
     BRAND = 'brand'  # 品牌塑造
+
+
+# 交易类型枚举
+class TransactionType(int, Enum):
+    INCOME = 1   # 收入
+    EXPENSE = 2  # 支出
+
+
+# 系统预设类别
+# tx_type: 1=收入, 2=支出
+SYSTEM_CATEGORIES = [
+    # 支出类别
+    {'name': '餐饮', 'tx_type': 2, 'icon': 'restaurant', 'order': 10},
+    {'name': '交通', 'tx_type': 2, 'icon': 'car', 'order': 20},
+    {'name': '购物', 'tx_type': 2, 'icon': 'shopping', 'order': 30},
+    {'name': '娱乐', 'tx_type': 2, 'icon': 'game', 'order': 40},
+    {'name': '房租', 'tx_type': 2, 'icon': 'home', 'order': 50},
+    {'name': '医疗', 'tx_type': 2, 'icon': 'hospital', 'order': 60},
+    {'name': '教育', 'tx_type': 2, 'icon': 'book', 'order': 70},
+    {'name': '通讯', 'tx_type': 2, 'icon': 'phone', 'order': 80},
+    {'name': '服装', 'tx_type': 2, 'icon': 'shirt', 'order': 90},
+    {'name': '日用品', 'tx_type': 2, 'icon': 'basket', 'order': 100},
+    {'name': '社交', 'tx_type': 2, 'icon': 'users', 'order': 110},
+    {'name': '旅行', 'tx_type': 2, 'icon': 'plane', 'order': 120},
+    {'name': '宠物', 'tx_type': 2, 'icon': 'paw', 'order': 130},
+    {'name': '其他支出', 'tx_type': 2, 'icon': 'more', 'order': 999},
+    # 收入类别
+    {'name': '工资', 'tx_type': 1, 'icon': 'wallet', 'order': 10},
+    {'name': '奖金', 'tx_type': 1, 'icon': 'gift', 'order': 20},
+    {'name': '投资收益', 'tx_type': 1, 'icon': 'trending-up', 'order': 30},
+    {'name': '兼职', 'tx_type': 1, 'icon': 'briefcase', 'order': 40},
+    {'name': '红包', 'tx_type': 1, 'icon': 'gift', 'order': 50},
+    {'name': '退款', 'tx_type': 1, 'icon': 'rotate-ccw', 'order': 60},
+    {'name': '其他收入', 'tx_type': 1, 'icon': 'more', 'order': 999},
+]
