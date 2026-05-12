@@ -149,25 +149,32 @@
 
 | 类别名称 | 图标 |
 |----------|------|
-| 工资奖金 | salary |
-| 投资收益 | invest |
-| 兼职外快 | part-time |
-| 礼金 | gift |
-| 其他 | other |
+| 工资 | wallet |
+| 奖金 | gift |
+| 投资收益 | trending-up |
+| 兼职 | briefcase |
+| 红包 | gift |
+| 退款 | rotate-ccw |
+| 其他收入 | more |
 
 **支出类别：**
 
 | 类别名称 | 图标 |
 |----------|------|
-| 餐饮 | food |
-| 交通 | traffic |
+| 餐饮 | restaurant |
+| 交通 | car |
 | 购物 | shopping |
-| 医疗 | medical |
-| 教育 | education |
-| 房租 | rent |
-| 通讯 | communication |
-| 娱乐 | entertainment |
-| 其他 | other |
+| 娱乐 | game |
+| 房租 | home |
+| 医疗 | hospital |
+| 教育 | book |
+| 通讯 | phone |
+| 服装 | shirt |
+| 日用品 | basket |
+| 社交 | users |
+| 旅行 | plane |
+| 宠物 | paw |
+| 其他支出 | more |
 
 #### 2.4.2 用户自定义类别
 
@@ -175,7 +182,7 @@
 |----------|-------------|
 | 需求描述 | 用户创建自定义类别 |
 | 业务流程 | 1. 选择类别类型（收入/支出）<br>2. 输入类别名称<br>3. 可选选择图标<br>4. 保存 |
-| 限制 | 同一账本下类别名称不能重复 |
+| 限制 | 同一用户下类别名称不能重复 |
 
 ### 2.5 报表模块
 
@@ -217,7 +224,7 @@ class TransactionType:
     EXPENSE = 2  # 支出
 ```
 
-### 3.3 用户表 (User)
+### 3.2 用户表 (User)
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
@@ -246,29 +253,31 @@ class TransactionType:
 
 ### 3.5 类别表 (Category)
 
+> **设计说明**：类别是用户级资源，不再绑定账本。系统预设类别（user_id=null）的 is_system=true，所有用户可见；用户自定义类别（user_id=当前用户）仅该用户可见。
+
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | id | Int | 主键 |
-| ledger_id | Int | 账本ID（外键） |
+| user_id | Char(12) | 所属用户ID，null 表示系统预设 |
 | name | Char(50) | 类别名称 |
 | type | Int | 1=收入, 2=支出 |
 | icon | Char(50) | 图标名称 |
 | is_system | Boolean | 是否系统预设 |
+| order | Int | 排序，数值越小越靠前 |
 | created_at | Datetime | 创建时间 |
 | updated_at | Datetime | 更新时间 |
 
-### 3.7 交易记录表 (Transaction)
+### 3.6 交易记录表 (Transaction)
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | id | Int | 主键 |
 | ledger_id | Int | 账本ID |
-| user_id | Char(12) | 记账人用户ID |
-| type | Int | 1=收入, 2=支出 |
+| tx_type | Int | 1=收入, 2=支出 |
 | amount | Decimal(12,2) | 金额 |
 | category_id | Int | 类别 ID |
 | remark | Char(500) | 备注 |
-| date | Date | 交易日期（索引） |
+| tx_date | Date | 交易日期（索引） |
 | created_at | Datetime | 创建时间 |
 | updated_at | Datetime | 更新时间 |
 
@@ -449,8 +458,7 @@ GET /api/v1/ledger
 POST /api/v1/ledger
 {
   "name": "旅行账本",
-  "description": "记录旅行开支",
-  "is_personal": true
+  "description": "记录旅行开支"
 }
 ```
 
@@ -714,7 +722,7 @@ GET /api/v1/report/yearly?ledger_id=1&year=2025
 | 页面 | 路由 | 说明 |
 |------|------|------|
 | 首页/仪表盘 | / | 账本切换、快捷操作入口 |
-| 账本管理 | /ledgers | 账本列表、创建、成员管理 |
+| 账本管理 | /ledgers | 账本列表、创建 |
 | 交易记录 | /transactions | 列表 + 添加 |
 | 报表 | /reports | 月度/年度报表 |
 | 我的 | /profile | 用户设置 |
@@ -725,7 +733,6 @@ GET /api/v1/report/yearly?ledger_id=1&year=2025
 - 添加交易：点击底部 FAB 按钮，弹出表单（表单内选择账本）
 - 报表切换：Tab 切换月度/年度，下拉选择时间
 - 删除确认：模态框二次确认
-- 成员管理：账本详情页查看/邀请/移除成员
 
 ---
 
@@ -735,8 +742,8 @@ GET /api/v1/report/yearly?ledger_id=1&year=2025
 
 - 密码使用 bcrypt 哈希存储
 - API 接口需要 JWT Token 认证
-- 用户数据隔离（只能操作自己拥有或参与的账本）
-- 协作账本权限控制（只有成员可查看/操作）
+- 用户数据隔离（只能操作自己的账本）
+- 用户数据隔离（只能操作自己的账本）
 
 ### 7.2 性能
 
@@ -761,14 +768,12 @@ GET /api/v1/report/yearly?ledger_id=1&year=2025
 
 ### 8.2 账本管理
 
-- [ ] 可以创建账本（个人/协作）
+- [ ] 可以创建账本
 - [ ] 可以查看账本列表
 - [ ] 可以编辑账本信息
-- [ ] 账本所有者可以删除账本
-- [ ] 账本所有者可以邀请成员
-- [ ] 账本所有者可以移除成员
-- [ ] 成员可以退出账本
+- [ ] 可以删除账本
 - [ ] 可以切换不同账本
+- [ ] 可以通过模板创建账本
 
 ### 8.3 交易记录
 
@@ -800,4 +805,4 @@ GET /api/v1/report/yearly?ledger_id=1&year=2025
 | 版本 | 日期 | 说明 |
 |------|------|------|
 | v1.0 | 2025-04-21 | 初始版本 |
-| v1.1 | 2025-04-28 | 新增账本模块，支持多人协作 |
+| v1.1 | 2025-04-28 | 新增账本模块，支持模板创建 |
