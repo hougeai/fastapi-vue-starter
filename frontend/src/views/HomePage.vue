@@ -1,180 +1,228 @@
 <script setup>
-import { getConfig } from '@/config'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useLedgerStore } from '@/stores/ledger'
+import { useTransactionStore } from '@/stores/transaction'
+import { useUserStore } from '@/stores/user'
+import dayjs from 'dayjs'
 
-const cases = [
-  {
-    name: '实景-主播-手前景1',
-    video: 'https://ks3-cn-beijing.ksyun.com/ksplayer/h265/mp4_resource/jinjie_265.mp4'
-  },
-  {
-    name: '实景-主播-手前景2',
-    video: 'https://ks3-cn-beijing.ksyun.com/ksplayer/h265/mp4_resource/jinjie_265.mp4'
-  },
-  {
-    name: '第一人称-包包直播',
-    video: 'https://ks3-cn-beijing.ksyun.com/ksplayer/h265/mp4_resource/jinjie_265.mp4'
-  },
-  {
-    name: '第一人称-防水涂层直播',
-    video: 'https://ks3-cn-beijing.ksyun.com/ksplayer/h265/mp4_resource/jinjie_265.mp4'
-  },
-  {
-    name: '第一人称-珠宝直播',
-    video: 'https://ks3-cn-beijing.ksyun.com/ksplayer/h265/mp4_resource/jinjie_265.mp4'
+const router = useRouter()
+const ledgerStore = useLedgerStore()
+const transactionStore = useTransactionStore()
+const userStore = useUserStore()
+
+const loading = ref(false)
+const showLedgerDropdown = ref(false)
+
+const currentLedger = computed(() => ledgerStore.currentLedger)
+const ledgers = computed(() => ledgerStore.ledgers)
+const summary = computed(() => transactionStore.summary)
+
+const formatMoney = (amount) => {
+  return amount != null ? Number(amount).toFixed(2) : '0.00'
+}
+
+const switchLedger = (ledger) => {
+  ledgerStore.setCurrentLedger(ledger)
+  showLedgerDropdown.value = false
+  if (ledger) fetchData()
+}
+
+const fetchData = async () => {
+  if (!currentLedger.value) return
+  loading.value = true
+  try {
+    await Promise.all([
+      transactionStore.fetchTransactions({ ledgerId: currentLedger.value.id, pageSize: 5 }),
+      transactionStore.fetchSummary(currentLedger.value.id)
+    ])
+  } finally {
+    loading.value = false
   }
-]
+}
+
+const getTxTypeLabel = (type) => (type === 1 ? '收入' : '支出')
+const getTxTypeColor = (type) => (type === 1 ? 'green' : 'red')
+
+onMounted(async () => {
+  loading.value = true
+  await Promise.all([
+    ledgerStore.fetchLedgerList(),
+    userStore.getUserInfo()
+  ])
+  if (currentLedger.value) await fetchData()
+  loading.value = false
+})
 </script>
 
 <template>
-  <div class="w-full bg-gray-100 min-h-screen">
-    <!-- 头部标题 -->
-    <header class="px-6 py-2 shadow-sm">
-      <div class="max-w-7xl mx-auto flex items-end space-x-4">
-        <h1 class="text-xl font-bold text-black">
-          AI驱动的<span class="text-red-500">多语种交互式直播平台</span>
-        </h1>
-        <p class="text-sm text-gray-600">人人皆可轻松开启的高质量AI直播间</p>
-      </div>
-    </header>
-
-    <!-- 主视觉横幅 -->
-    <section class="relative h-60 md:h-80 bg-black rounded-2xl overflow-hidden mb-12 mx-6">
-      <img src="@/assets/img/avatar.webp" alt="AI Agent 应用" class="w-full h-full object-cover" />
-      <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-        <div class="text-center text-white px-6">
-          <h2 class="text-3xl md:text-4xl font-bold mb-2">
-            迈向未来的<span
-              class="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500"
-              >AI Agent</span
-            >应用
-          </h2>
-          <p class="text-xl md:text-2xl font-semibold">企业级多语种AI交互式直播生产平台</p>
+  <div class="w-full min-h-screen bg-[var(--color-fill-1)]">
+    <!-- 顶部区域 -->
+    <div class="bg-gradient-to-br from-blue-50 via-indigo-50 to-white px-6 pt-8 pb-16">
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h1 class="text-xl font-bold text-[var(--color-text-1)]">
+            {{ dayjs().format('MM月DD日') }} · 周{{ ['日', '一', '二', '三', '四', '五', '六'][dayjs().day()] }}
+          </h1>
+          <p class="text-sm text-[var(--color-text-3)] mt-1">{{ userStore.userName || '用户' }}，今天想记点什么？</p>
         </div>
-      </div>
-    </section>
-
-    <!-- 三步流程 -->
-    <section class="px-6 pb-12">
-      <div class="max-w-7xl mx-auto text-center mb-10">
-        <h2 class="text-2xl font-bold text-black">
-          只需 <span class="text-red-500 text-3xl">3</span> 步，轻松直播
-        </h2>
+        <a-button type="primary" shape="round" :disabled="!currentLedger" @click="router.push('/transactions')">
+          <template #icon><icon-material-symbols:add /></template>
+          记一笔
+        </a-button>
       </div>
 
-      <div class="flex flex-col md:flex-row justify-center gap-8">
-        <!-- 第一步 -->
-        <div
-          class="w-full max-w-xs p-6 bg-[var(--color-warning-light-1)] rounded-xl shadow-md transition-transform hover:scale-105 flex flex-col items-center text-center"
-        >
-          <h3 class="text-lg font-semibold mb-2">创建直播项目</h3>
-          <p class="text-sm text-gray-600 mb-4">提供商品、服务或其他相关资料</p>
-          <button
-            class="px-4 py-2 bg-white border border-orange-400 text-orange-600 rounded-md hover:bg-orange-50 transition-colors"
-            @click="$router.push('/dashboard/product')"
-          >
-            创建项目
-          </button>
+      <!-- 账本选择 -->
+      <a-dropdown v-model:popup-visible="showLedgerDropdown" trigger="click" :disabled="ledgers.length === 0">
+        <div class="flex items-center gap-1 cursor-pointer bg-white rounded-full px-4 py-1.5 shadow-sm border border-[var(--color-border-2)] w-fit">
+          <icon-material-symbols:account-balance-wallet-outline class="text-base text-blue-500" />
+          <span class="text-sm font-medium text-[var(--color-text-1)]">{{ currentLedger?.name || '请选择账本' }}</span>
+          <icon-material-symbols:keyboard-arrow-down v-if="ledgers.length" class="text-base text-[var(--color-text-3)]" />
         </div>
-
-        <!-- 箭头 -->
-        <div class="hidden md:flex items-center justify-center">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
+        <template #content>
+          <a-doption
+            v-for="ledger in ledgers"
+            :key="ledger.id"
+            @click="switchLedger(ledger)"
           >
-            <path d="M5 12h14M12 5l7 7-7 7"></path>
-          </svg>
+            <div class="flex items-center justify-between w-full">
+              <span>{{ ledger.name }}</span>
+              <a-tag v-if="ledger.is_default" size="small" color="arcoblue">默认</a-tag>
+            </div>
+          </a-doption>
+        </template>
+      </a-dropdown>
+    </div>
+
+    <!-- 无账本引导 -->
+    <div v-if="!loading && ledgers.length === 0" class="px-4 -mt-10 mb-4">
+      <div class="bg-[var(--color-bg-2)] rounded-xl p-8 shadow-sm text-center">
+        <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-100 flex items-center justify-center">
+          <icon-material-symbols:book-2-outline class="text-3xl text-blue-500" />
         </div>
-
-        <!-- 第二步 -->
-        <div
-          class="w-full max-w-xs p-6 bg-[var(--color-warning-light-1)] rounded-xl shadow-md transition-transform hover:scale-105 flex flex-col items-center text-center"
-        >
-          <h3 class="text-lg font-semibold mb-2">生成虚拟主播</h3>
-          <p class="text-sm text-gray-600 mb-4">AI智能生成主播人设、语音和话术</p>
-          <button
-            class="px-4 py-2 bg-white border border-orange-400 text-orange-600 rounded-md hover:bg-orange-50 transition-colors"
-            @click="$router.push('/dashboard/host-agent')"
-          >
-            创建主播
-          </button>
-        </div>
-
-        <!-- 箭头 -->
-        <div class="hidden md:flex items-center justify-center">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M5 12h14M12 5l7 7-7 7"></path>
-          </svg>
-        </div>
-
-        <!-- 第三步 -->
-        <div
-          class="w-full max-w-xs p-6 bg-[var(--color-warning-light-1)] rounded-xl shadow-md transition-transform hover:scale-105 flex flex-col items-center text-center"
-        >
-          <h3 class="text-lg font-semibold mb-2">一键快速开播</h3>
-          <p class="text-sm text-gray-600 mb-4">云端算力无限拓展免部署快速开播</p>
-          <button
-            class="px-4 py-2 bg-white border border-orange-400 text-orange-600 rounded-md hover:bg-orange-50 transition-colors"
-            @click="$router.push('/dashboard/live-room')"
-          >
-            创建直播间
-          </button>
+        <h3 class="text-lg font-semibold text-[var(--color-text-1)] mb-2">还没有账本</h3>
+        <p class="text-sm text-[var(--color-text-3)] mb-6">创建一个账本，开始记录你的收支吧</p>
+        <div class="flex justify-center gap-3">
+          <a-button type="primary" @click="router.push('/ledgers')">
+            <template #icon><icon-material-symbols:add /></template>
+            创建账本
+          </a-button>
+          <a-button type="outline" @click="router.push('/ledgers')">
+            <template #icon><icon-material-symbols:dashboard-customize-outline /></template>
+            从模板创建
+          </a-button>
         </div>
       </div>
-    </section>
+    </div>
 
-    <!-- 行业案例展示 -->
-    <section class="px-6 pb-12">
-      <div class="max-w-7xl mx-auto mb-8 text-center">
-        <h2 class="text-xl font-semibold text-black">
-          来看看各行业的人如何使用{{ getConfig('projectName') }}
-        </h2>
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div
-          v-for="(item, index) in cases"
-          :key="index"
-          class="rounded-lg shadow-md overflow-hidden"
-        >
-          <video
-            :src="item.video"
-            class="w-full h-80 object-cover rounded-lg"
-            controls
-            controlslist="nodownload"
-            preload="metadata"
-          ></video>
-          <div class="p-2 bg-white">
-            <p class="text-center font-bold">{{ item.name }}</p>
+    <!-- 有账本时的内容 -->
+    <template v-else>
+      <!-- 收支概览 -->
+      <div class="px-4 -mt-10 mb-4">
+        <div class="grid grid-cols-3 gap-3">
+          <div class="bg-[var(--color-bg-2)] rounded-xl p-4 shadow-sm">
+            <div class="text-xs text-[var(--color-text-3)] mb-1">本月收入</div>
+            <div class="text-lg font-bold text-green-500">+{{ formatMoney(summary.total_income) }}</div>
+          </div>
+          <div class="bg-[var(--color-bg-2)] rounded-xl p-4 shadow-sm">
+            <div class="text-xs text-[var(--color-text-3)] mb-1">本月支出</div>
+            <div class="text-lg font-bold text-red-500">-{{ formatMoney(summary.total_expense) }}</div>
+          </div>
+          <div class="bg-[var(--color-bg-2)] rounded-xl p-4 shadow-sm">
+            <div class="text-xs text-[var(--color-text-3)] mb-1">本月结余</div>
+            <div class="text-lg font-bold text-blue-600">{{ formatMoney(summary.balance) }}</div>
           </div>
         </div>
       </div>
-    </section>
+
+      <!-- 快捷入口 -->
+      <div class="px-4 mb-4">
+        <div class="bg-[var(--color-bg-2)] rounded-xl p-4 shadow-sm">
+          <div class="grid grid-cols-4 gap-2">
+            <div
+              class="flex flex-col items-center py-3 rounded-lg cursor-pointer transition-all hover:bg-[var(--color-fill-2)]"
+              @click="router.push('/transactions')"
+            >
+              <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mb-2">
+                <icon-material-symbols:edit-note class="text-xl text-blue-500" />
+              </div>
+              <span class="text-xs text-[var(--color-text-2)]">记一笔</span>
+            </div>
+            <div
+              class="flex flex-col items-center py-3 rounded-lg cursor-pointer transition-all hover:bg-[var(--color-fill-2)]"
+              @click="router.push('/ledgers')"
+            >
+              <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center mb-2">
+                <icon-material-symbols:account-balance-wallet-outline class="text-xl text-green-500" />
+              </div>
+              <span class="text-xs text-[var(--color-text-2)]">账本</span>
+            </div>
+            <div
+              class="flex flex-col items-center py-3 rounded-lg cursor-pointer transition-all hover:bg-[var(--color-fill-2)]"
+              @click="router.push('/reports')"
+            >
+              <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center mb-2">
+                <icon-ep:data-analysis class="text-xl text-orange-500" />
+              </div>
+              <span class="text-xs text-[var(--color-text-2)]">报表</span>
+            </div>
+            <div
+              class="flex flex-col items-center py-3 rounded-lg cursor-pointer transition-all hover:bg-[var(--color-fill-2)]"
+              @click="router.push('/ledgers')"
+            >
+              <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center mb-2">
+                <icon-material-symbols:dashboard-customize-outline class="text-xl text-purple-500" />
+              </div>
+              <span class="text-xs text-[var(--color-text-2)]">模板</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 最近交易 -->
+      <div class="px-4 mb-4">
+        <div class="bg-[var(--color-bg-2)] rounded-xl shadow-sm overflow-hidden">
+          <div class="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border-1)]">
+            <span class="font-medium text-[var(--color-text-1)]">最近交易</span>
+            <a-link @click="router.push('/transactions')">查看全部</a-link>
+          </div>
+
+          <a-spin :loading="loading" class="w-full">
+            <div v-if="transactionStore.transactions.length">
+              <div
+                v-for="tx in transactionStore.transactions"
+                :key="tx.id"
+                class="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border-1)] last:border-0 hover:bg-[var(--color-fill-2)] transition-colors"
+              >
+                <div class="flex items-center gap-3">
+                  <div
+                    class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+                    :class="tx.tx_type === 1 ? 'bg-green-100 text-green-500' : 'bg-red-100 text-red-500'"
+                  >
+                    {{ tx.tx_type === 1 ? '收' : '支' }}
+                  </div>
+                  <div>
+                    <div class="text-sm text-[var(--color-text-1)]">{{ tx.remark || '无备注' }}</div>
+                    <div class="text-xs text-[var(--color-text-3)] mt-0.5">{{ tx.tx_date }}</div>
+                  </div>
+                </div>
+                <div
+                  class="text-sm font-semibold"
+                  :class="tx.tx_type === 1 ? 'text-green-500' : 'text-red-500'"
+                >
+                  {{ tx.tx_type === 1 ? '+' : '-' }}¥{{ formatMoney(tx.amount) }}
+                </div>
+              </div>
+            </div>
+
+            <div v-else class="py-12 text-center">
+              <icon-material-symbols:receipt-long-outline class="text-4xl text-[var(--color-text-4)] mb-2" />
+              <p class="text-sm text-[var(--color-text-3)]">暂无交易记录</p>
+              <a-button type="text" size="small" @click="router.push('/transactions')">去记一笔</a-button>
+            </div>
+          </a-spin>
+        </div>
+      </div>
+    </template>
   </div>
 </template>
-
-<style scoped>
-/* 自定义样式补充 */
-@media (max-width: 768px) {
-  .flex-row {
-    flex-direction: column;
-  }
-}
-</style>

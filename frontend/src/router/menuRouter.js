@@ -1,14 +1,8 @@
 import IconHome from '~icons/material-symbols/home'
-import IconDashboard from '~icons/material-symbols/dashboard-outline'
+import IconWallet from '~icons/material-symbols/account-balance-wallet-outline'
+import IconReceipt from '~icons/material-symbols/receipt-long-outline'
+import IconBarChart from '~icons/material-symbols/bar-chart-4-bars'
 import IconUser from '~icons/material-symbols/person'
-import IconLive from '~icons/material-symbols/live-tv-outline'
-import IconProject from '~icons/material-symbols/production-quantity-limits'
-import IconHost from '~icons/material-symbols/psychology-outline'
-import IconVoice from '~icons/material-symbols/auto-detect-voice'
-import IconInfo from '~icons/material-symbols/person-edit-outline'
-import IconOrder from '~icons/material-symbols/assignment-outline'
-import IconInvite from '~icons/material-symbols/person-add-outline'
-import IconMoney from '~icons/material-symbols/money-bag'
 
 export const menuRouter = [
   {
@@ -21,116 +15,40 @@ export const menuRouter = [
     component: () => import('@/views/HomePage.vue')
   },
   {
-    path: 'dashboard',
-    name: 'Dashboard',
+    path: 'ledgers',
+    name: 'LedgerPage',
     meta: {
-      title: '控制台',
-      icon: markRaw(IconDashboard)
+      title: '账本管理',
+      icon: markRaw(IconWallet)
     },
-    redirect: { name: 'LiveRoomPage' },
-    children: [
-      {
-        path: 'live-room',
-        name: 'LiveRoomPage',
-        meta: {
-          title: '我的直播间',
-          icon: markRaw(IconLive)
-        },
-        component: () => import('@/views/dashboard/LiveRoomPage.vue'),
-        children: [
-          {
-            path: 'create',
-            name: 'CreateLiveRoom',
-            meta: {
-              hideParentContent: true
-            },
-            component: () => import('@/views/dashboard/LiveRoomForm.vue')
-          },
-          {
-            path: 'edit/:id',
-            name: 'EditLiveRoom',
-            meta: {
-              hideParentContent: true
-            },
-            component: () => import('@/views/dashboard/LiveRoomForm.vue')
-          }
-        ]
-      },
-      {
-        path: 'product',
-        name: 'ProductPage',
-        meta: {
-          title: '我的项目',
-          icon: markRaw(IconProject)
-        },
-        component: () => import('@/views/dashboard/ProductPage.vue')
-      },
-      {
-        path: 'host-agent',
-        name: 'HostAgentPage',
-        meta: {
-          title: '我的主播',
-          icon: markRaw(IconHost)
-        },
-        component: () => import('@/views/dashboard/HostAgentPage.vue')
-      },
-      {
-        path: 'voice',
-        name: 'VoicePage',
-        meta: {
-          title: '音色管理',
-          icon: markRaw(IconVoice)
-        },
-        component: () => import('@/views/dashboard/VoicePage.vue')
-      }
-    ]
+    component: () => import('@/views/LedgerPage.vue')
   },
   {
-    path: 'user-center',
-    name: 'UserCenter',
+    path: 'transactions',
+    name: 'TransactionPage',
     meta: {
-      title: '个人中心',
+      title: '交易记录',
+      icon: markRaw(IconReceipt)
+    },
+    component: () => import('@/views/TransactionPage.vue')
+  },
+  {
+    path: 'reports',
+    name: 'ReportPage',
+    meta: {
+      title: '报表',
+      icon: markRaw(IconBarChart)
+    },
+    component: () => import('@/views/ReportPage.vue')
+  },
+  {
+    path: 'profile',
+    name: 'ProfilePage',
+    meta: {
+      title: '我的',
       icon: markRaw(IconUser)
     },
-    redirect: { name: 'UserInfoPage' },
-    children: [
-      {
-        path: 'user-info',
-        name: 'UserInfoPage',
-        meta: {
-          title: '个人资料',
-          icon: markRaw(IconInfo)
-        },
-        component: () => import('@/views/user-center/UserInfoPage.vue')
-      },
-      {
-        path: 'user-order',
-        name: 'UserOrderPage',
-        meta: {
-          title: '我的订单',
-          icon: markRaw(IconOrder)
-        },
-        component: () => import('@/views/user-center/UserOrderPage.vue')
-      },
-      {
-        path: 'user-invite',
-        name: 'UserInvitePage',
-        meta: {
-          title: '我的邀请',
-          icon: markRaw(IconInvite)
-        },
-        component: () => import('@/views/user-center/UserInvitePage.vue')
-      },
-      {
-        path: 'user-balance',
-        name: 'UserBalancePage',
-        meta: {
-          title: '我的余额',
-          icon: markRaw(IconMoney)
-        },
-        component: () => import('@/views/user-center/UserBalancePage.vue')
-      }
-    ]
+    component: () => import('@/views/ProfilePage.vue')
   }
 ]
 

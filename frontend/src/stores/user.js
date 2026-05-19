@@ -1,54 +1,38 @@
 import api from '@/api'
-import { removeToken, formatDate } from '@/utils'
+import { removeToken } from '@/utils'
 import { getConfig } from '@/config/index'
 import { router } from '@/router'
-import { useProductStore } from './product'
-import { useRoleStore } from './role'
+import { useLedgerStore } from './ledger'
+import { useTransactionStore } from './transaction'
 
 export const useUserStore = defineStore('user', {
   state() {
     return {
-      userInfo: {}
+      userInfo: {},
+      loading: false
     }
   },
-  // getters直接返回属性，直接用userStore.name而不需要userStore.userInfo.user_name
   getters: {
     userId() {
       return this.userInfo?.user_id
     },
     userName() {
-      return this.userInfo?.user_name
+      return this.userInfo?.user_name || this.userInfo?.username
     },
     email() {
       return this.userInfo?.email
-    },
-    phone() {
-      return this.userInfo?.phone
-    },
-    wxid() {
-      return this.userInfo?.wxid
-    },
-    roleId() {
-      return this.userInfo?.role_id || 0
-    },
-    roleName() {
-      return this.userInfo?.role_name || '未知角色'
-    },
-    roleDesc() {
-      return this.userInfo?.role_desc || '暂无描述'
-    },
-    roleExpire() {
-      return this.userInfo?.role_expire ? formatDate(this.userInfo.role_expire) : '永久'
     },
     avatar() {
       return this.userInfo?.avatar || getConfig('me.avatar')
     }
   },
   actions: {
+    // 获取用户信息
     async getUserInfo(forceRefresh = false) {
       if (!forceRefresh && Object.keys(this.userInfo).length > 0) {
         return { success: true, data: this.userInfo }
       }
+      this.loading = true
       try {
         const res = await api.getUserInfo()
         if (res.code !== 200) {
@@ -60,32 +44,45 @@ export const useUserStore = defineStore('user', {
       } catch (error) {
         this.logout()
         return { success: false, error: error.message || error }
+      } finally {
+        this.loading = false
       }
     },
-    async logout() {
-      removeToken()
-      this.$reset() // 清除persist的数据
-      router.push('/')
-      // 清空产品缓存
-      const productStore = useProductStore()
-      productStore.reset()
-      // 清空角色缓存
-      const roleStore = useRoleStore()
-      roleStore.reset()
-    },
+
+    // 更新用户信息
     async updateUserInfo(userInfo = {}) {
+      this.loading = true
       try {
-        await api.updateUserInfo(userInfo)
-        this.setUserInfo(userInfo)
-        return { success: true }
+        const res = await api.updateUser(userInfo)
+        if (res.code === 200) {
+          this.setUserInfo(userInfo)
+          return { success: true }
+        }
+        return { success: false, error: res.msg }
       } catch (error) {
         console.error('更新用户信息失败:', error)
         return { success: false, error: error.message || error }
+      } finally {
+        this.loading = false
       }
     },
+
+    // 设置用户信息（合并）
     setUserInfo(userInfo = {}) {
-      // 保留原对象中未更新的字段，新对象中的值覆盖同名字段，避免手动指定要保留的字段
       this.userInfo = { ...this.userInfo, ...userInfo }
+    },
+
+    // 登出
+    async logout() {
+      removeToken()
+      this.$reset()
+      router.push('/')
+      // 清空账本缓存
+      const ledgerStore = useLedgerStore()
+      ledgerStore.reset()
+      // 清空交易缓存
+      const transactionStore = useTransactionStore()
+      transactionStore.reset()
     }
   },
   persist: {

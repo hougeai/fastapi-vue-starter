@@ -353,7 +353,7 @@ const handleRegister = async () => {
     if (query.i) {
       data.inviter_id = query.i
     }
-    await api.emailRegister(data)
+    await api.register(data)
     AMessage.success('注册成功，请登录')
     activeTab.value = 'email'
     emailForm.value.email = registerForm.value.email

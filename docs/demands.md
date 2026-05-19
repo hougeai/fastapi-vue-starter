@@ -722,9 +722,9 @@ GET /api/v1/report/yearly?ledger_id=1&year=2025
 | 页面 | 路由 | 说明 |
 |------|------|------|
 | 首页/仪表盘 | / | 账本切换、快捷操作入口 |
-| 账本管理 | /ledgers | 账本列表、创建 |
+| 账本管理 | /ledgers | 账本列表、手动创建、模板创建 |
 | 交易记录 | /transactions | 列表 + 添加 |
-| 报表 | /reports | 月度/年度报表 |
+| 报表 | /reports | 月度/年度报表（前端聚合计算） |
 | 我的 | /profile | 用户设置 |
 
 ### 6.2 交互要求
@@ -733,6 +733,61 @@ GET /api/v1/report/yearly?ledger_id=1&year=2025
 - 添加交易：点击底部 FAB 按钮，弹出表单（表单内选择账本）
 - 报表切换：Tab 切换月度/年度，下拉选择时间
 - 删除确认：模态框二次确认
+- 模板创建：点击"从模板创建"按钮，选择模板后填写账本名称完成创建（预设类别同步创建）
+
+### 6.3 技术栈
+
+**前端技术栈：**
+- Vue 3 (Composition API + `<script setup>`)
+- Vite 7.x
+- UnoCSS (原子化 CSS)
+- Pinia (状态管理，支持持久化)
+- Vue Router 4.x
+- Arco Design Vue (UI 组件库)
+- @vueuse/core (组合式工具库)
+- dayjs (日期处理)
+- axios (HTTP 请求)
+- Iconify (图标库)
+
+### 6.4 前端设计规范
+
+**目录结构：**
+```
+frontend/src/
+├── api/              # API 接口封装
+│   ├── index.js      # 接口导出
+│   └── http.js       # axios 实例配置
+├── assets/           # 静态资源
+├── components/       # 公共组件（Dialog 等）
+├── config/           # 全局配置
+├── layout/           # 布局组件
+│   ├── DefaultLayout.vue
+│   ├── SidebarLayout.vue
+│   └── components/   # 布局子组件（NavBar, Menu, Footer 等）
+├── router/           # 路由配置
+├── stores/           # Pinia 状态管理
+├── styles/           # 全局样式
+├── utils/            # 工具函数
+└── views/            # 页面组件
+    ├── HomePage.vue          # 首页
+    ├── LedgerPage.vue        # 账本管理
+    ├── TransactionPage.vue   # 交易记录
+    ├── ReportPage.vue        # 报表
+    └── ProfilePage.vue       # 我的
+```
+
+**设计模式：**
+- 页面组件使用 `<script setup>` Composition API
+- 状态管理使用 Pinia，每个模块独立的 store
+- API 调用统一封装在 `@/api/index.js`
+- 列表页使用表格组件 + 分页
+- 表单使用 Dialog 弹窗
+- 删除操作使用 `AModal.confirm` 二次确认
+
+**组件命名：**
+- 页面组件：`XxxPage.vue`
+- 弹窗组件：`XxxDialog.vue`
+- 列表项组件：`XxxItem.vue`
 
 ---
 
