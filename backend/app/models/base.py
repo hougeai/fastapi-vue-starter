@@ -1,6 +1,6 @@
 import asyncio
 import uuid
-from datetime import datetime
+from datetime import datetime, date
 from tortoise import fields, models
 from decimal import Decimal
 from core.config import settings
@@ -21,6 +21,8 @@ class BaseModel(models.Model):
                 value = getattr(self, field)
                 if isinstance(value, datetime):
                     value = value.strftime(settings.DATETIME_FORMAT)
+                elif isinstance(value, date):
+                    value = value.strftime('%Y-%m-%d')
                 elif isinstance(value, Decimal):  # 处理 Decimal 类型
                     value = float(value)
                 elif hasattr(value, 'hex'):  # 处理 UUID 类型

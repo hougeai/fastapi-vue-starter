@@ -4,12 +4,53 @@ from fastapi import APIRouter, Depends, Query
 from core.dependency import AuthControl
 from models.user import User
 from models.enums import TransactionType
-from controllers.ledger import ledger_controller, category_controller
-from schemas.ledger import LedgerCreate, LedgerUpdate, CategoryCreate, CategoryUpdate
+from controllers.ledger import ledger_controller, category_controller, ledger_template_controller
+from schemas.ledger import LedgerCreate, LedgerUpdate, CategoryCreate, CategoryUpdate, LedgerTemplateCreate, LedgerTemplateUpdate
 from schemas.base import Success, Fail
 
 
 router = APIRouter()
+
+
+# ============ LedgerTemplate 账本模板 ============
+@router.get('/template', summary='获取账本模板列表')
+async def list_templates():
+    """获取所有账本模板"""
+    templates = await ledger_template_controller.model.all()
+    data = [await t.to_dict() for t in templates]
+    return Success(data=data)
+
+
+@router.post('/template', summary='创建账本模板（管理员）')
+async def create_template(
+    obj_in: LedgerTemplateCreate,
+    user: User = Depends(AuthControl.is_authed),
+):
+    """创建账本模板"""
+    if not user.is_superuser:
+        return Fail(msg='Admin only')
+    template = await ledger_template_controller.create(obj_in)
+    return Success(data=await template.to_dict())
+
+
+@router.post('/template/{template_id}/create', summary='从模板创建账本')
+async def create_ledger_from_template(
+    template_id: int,
+    name: str = Query(..., description='账本名称'),
+    description: Optional[str] = Query(None, description='账本描述'),
+    user: User = Depends(AuthControl.is_authed),
+):
+    """从模板创建账本，同时创建预设类别"""
+    try:
+        ledger, categories = await ledger_controller.create_from_template(
+            user.user_id, template_id, name, description
+        )
+        return Success(data={
+            'ledger': await ledger.to_dict(),
+            'categories': [await c.to_dict() for c in categories],
+        })
+    except ValueError as e:
+        return Fail(msg=str(e))
 
 
 # ============ Category 类别（放在 ledger/{ledger_id} 之前，避免路由冲突） ============

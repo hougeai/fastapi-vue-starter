@@ -19,6 +19,60 @@ def get_headers(token: str = None) -> dict:
     return {}
 
 
+def test_template(token: str):
+    """测试账本模板相关接口"""
+    print('\n[账本模板模块]')
+    headers = get_headers(token)
+
+    # 1. 获取模板列表
+    print('\n1. 获取账本模板列表')
+    try:
+        response = client.get('ledger/template')
+        print(f'状态: {response.status_code}')
+        if response.status_code == 200:
+            print(f'响应: {response.json()}')
+            templates = response.json().get('data', [])
+            template_id = templates[0]['id'] if templates else None
+        else:
+            print(f'响应: {response.json()}')
+            template_id = None
+    except Exception as e:
+        print(f'请求失败: {e}')
+        template_id = None
+
+    return template_id
+
+
+def test_ledger_from_template(token: str, template_id: int):
+    """从模板创建账本"""
+    print('\n[从模板创建账本]')
+    headers = get_headers(token)
+
+    # 从模板创建账本
+    print(f'\n1. 从模板(id={template_id})创建账本')
+    try:
+        response = client.post(
+            f'ledger/template/{template_id}/create',
+            params={'name': '我的旅行账本', 'description': '去云南玩'},
+            headers=headers
+        )
+        print(f'状态: {response.status_code}')
+        if response.status_code == 200:
+            result = response.json()
+            print(f'响应: {result}')
+            ledger_id = result.get('data', {}).get('ledger', {}).get('id')
+            categories = result.get('data', {}).get('categories', [])
+            print(f'创建了 {len(categories)} 个预设类别')
+        else:
+            print(f'响应: {response.json()}')
+            ledger_id = None
+    except Exception as e:
+        print(f'请求失败: {e}')
+        ledger_id = None
+
+    return ledger_id
+
+
 def test_system_categories():
     """测试获取系统预设类别（无需登录）"""
     print('\n[系统预设类别]')
@@ -26,7 +80,12 @@ def test_system_categories():
         response = client.get('ledger/category/system')
         print(f'状态: {response.status_code}')
         try:
-            print(f'响应: {response.json()}')
+            data = response.json()
+            print(f'响应: {data}')
+            # 统计收入/支出类别数量
+            income = [c for c in data.get('data', []) if c.get('tx_type') == 1]
+            expense = [c for c in data.get('data', []) if c.get('tx_type') == 2]
+            print(f'收入类别: {len(income)}个, 支出类别: {len(expense)}个')
         except Exception:
             print(f'响应文本: {response.text}')
     except Exception as e:
@@ -79,7 +138,7 @@ def test_ledger(token: str):
 
             # 4. 更新账本
             print(f'\n4. 更新账本 (id={ledger_id})')
-            update_data = {'name': '我的账本（已修改）', 'desc': '更新后的描述'}
+            update_data = {'name': '我的账本（已修改）', 'description': '更新后的描述'}
             response = client.put(f'ledger/{ledger_id}', json=update_data, headers=headers)
             print(f'状态: {response.status_code}')
             try:
@@ -193,6 +252,7 @@ def test_transaction(token: str, ledger_id: int):
     print('\n2. 创建交易记录')
     tx_data = {
         'ledger_id': ledger_id,
+        'tx_date': '2026-05-19',
         'amount': 100.50,
         'tx_type': 2,
         'category_id': 1,
@@ -275,21 +335,28 @@ async def run_tests(token: str):
     print('账本、分类、交易 接口测试')
     print('=' * 60)
 
-    # 1. 系统预设类别（无需登录）
+    # 1. 系统预设类别
     # test_system_categories()
 
-    # # 2. 账本模块
-    # ledger_id = test_ledger(token)
-    # print(ledger_id)
+    # 2. 账本模板
+    template_id = test_template(token)
+    if template_id:
+        # 3. 从模板创建账本
+        ledger_id = test_ledger_from_template(token, template_id)
+        if ledger_id:
+            # 4. 测试交易（用模板创建的账本）
+            test_transaction(token, ledger_id)
 
-    # # 3. 类别模块
+    # 5. 普通账本测试
+    # ledger_id = test_ledger(token)
+
+    # # 6. 类别模块
     # test_category(token)
 
-    # # 4. 交易模块
-    test_transaction(token, 2)
-
+    # # 7. 交易模块（用普通账本）
+    # if ledger_id:
+    #     test_transaction(token, ledger_id)
 
 if __name__ == '__main__':
-    # 开发模式 token（超级管理员）
-    token = 'dev'
+    token = 'dev'  # 开发模式 token（超级管理员）
     asyncio.run(run_tests(token))

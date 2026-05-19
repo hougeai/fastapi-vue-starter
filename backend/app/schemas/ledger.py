@@ -2,12 +2,28 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 
+# ============ LedgerTemplate 账本模板 ============
+class LedgerTemplateCreate(BaseModel):
+    name: str = Field(..., max_length=50, description='模板名称')
+    description: Optional[str] = Field(default=None, max_length=200, description='模板描述')
+    icon: Optional[str] = Field(default=None, max_length=50, description='模板图标')
+    categories: list[str] = Field(default_factory=list, description='预设类别名称列表')
+
+
+class LedgerTemplateUpdate(BaseModel):
+    name: Optional[str] = Field(default=None, max_length=50, description='模板名称')
+    description: Optional[str] = Field(default=None, max_length=200, description='模板描述')
+    icon: Optional[str] = Field(default=None, max_length=50, description='模板图标')
+    categories: Optional[list[str]] = Field(default=None, description='预设类别名称列表')
+
+
 # ============ Ledger 账本 ============
 class LedgerCreate(BaseModel):
     name: str = Field(..., max_length=50, description='账本名称', example='我的账本')
     description: Optional[str] = Field(default=None, max_length=200, description='账本描述', example='日常收支记录')
     icon: Optional[str] = Field(default=None, max_length=50, description='账本图标', example='wallet')
     is_default: Optional[bool] = Field(default=False, description='是否为默认账本')
+    template_id: Optional[int] = Field(default=None, description='来源模板ID')
 
 
 class LedgerUpdate(BaseModel):

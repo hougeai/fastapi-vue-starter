@@ -6,8 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from tortoise.expressions import Q
 from api import api_router
 from models.user import Api, Role, RoleApi
-from models.ledger import Category
-from models.enums import SYSTEM_CATEGORIES
+from models.ledger import Category, LedgerTemplate
+from models.enums import SYSTEM_CATEGORIES, LEDGER_TEMPLATES
 from schemas.user import UserCreate
 from controllers import api_controller, user_controller
 from .exceptions import (
@@ -166,9 +166,23 @@ async def init_system_categories():
             )
 
 
+async def init_ledger_templates():
+    """初始化账本模板到数据库"""
+    for template_data in LEDGER_TEMPLATES:
+        exists = await LedgerTemplate.filter(name=template_data['name']).exists()
+        if not exists:
+            await LedgerTemplate.create(
+                name=template_data['name'],
+                description=template_data.get('description'),
+                icon=template_data.get('icon'),
+                categories=template_data.get('categories', []),
+            )
+
+
 async def init_data(app: FastAPI):
     await init_db()
     await init_apis(app)
     await init_roles()
     await init_superuser()
     await init_system_categories()
+    await init_ledger_templates()

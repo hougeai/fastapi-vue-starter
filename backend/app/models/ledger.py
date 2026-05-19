@@ -3,6 +3,17 @@ from .base import BaseModel, TimestampMixin
 from .enums import TransactionType
 
 
+# 账本模板表
+class LedgerTemplate(BaseModel, TimestampMixin):
+    name = fields.CharField(max_length=50, description='模板名称', index=True)
+    description = fields.CharField(max_length=200, null=True, description='模板描述')
+    icon = fields.CharField(max_length=50, null=True, description='模板图标')
+    categories = fields.JSONField(default=list, description='预设类别名称列表')
+
+    class Meta:
+        table = 'ledger_template'
+
+
 # 账本表
 class Ledger(BaseModel, TimestampMixin):
     user_id = fields.CharField(max_length=12, description='所属用户ID', index=True)
@@ -10,6 +21,7 @@ class Ledger(BaseModel, TimestampMixin):
     description = fields.CharField(max_length=200, null=True, description='账本描述')
     icon = fields.CharField(max_length=50, null=True, description='账本图标')
     is_default = fields.BooleanField(default=False, description='是否为默认账本')
+    template_id = fields.IntField(null=True, description='来源模板ID')
 
     class Meta:
         table = 'ledger'

@@ -99,6 +99,15 @@ SYSTEM_CATEGORIES = [
     {'name': '旅行', 'tx_type': 2, 'icon': 'plane', 'order': 120},
     {'name': '宠物', 'tx_type': 2, 'icon': 'paw', 'order': 130},
     {'name': '其他支出', 'tx_type': 2, 'icon': 'more', 'order': 999},
+    # 模板专用类别（旅行）
+    {'name': '机票', 'tx_type': 2, 'icon': 'plane', 'order': 140},
+    {'name': '住宿', 'tx_type': 2, 'icon': 'bed', 'order': 150},
+    {'name': '门票', 'tx_type': 2, 'icon': 'ticket', 'order': 160},
+    # 模板专用类别（医疗）
+    {'name': '门诊', 'tx_type': 2, 'icon': 'stethoscope', 'order': 170},
+    {'name': '住院', 'tx_type': 2, 'icon': 'bed', 'order': 180},
+    {'name': '药品', 'tx_type': 2, 'icon': 'pill', 'order': 190},
+    {'name': '检查', 'tx_type': 2, 'icon': 'activity', 'order': 200},
     # 收入类别
     {'name': '工资', 'tx_type': 1, 'icon': 'wallet', 'order': 10},
     {'name': '奖金', 'tx_type': 1, 'icon': 'gift', 'order': 20},
@@ -107,4 +116,33 @@ SYSTEM_CATEGORIES = [
     {'name': '红包', 'tx_type': 1, 'icon': 'gift', 'order': 50},
     {'name': '退款', 'tx_type': 1, 'icon': 'rotate-ccw', 'order': 60},
     {'name': '其他收入', 'tx_type': 1, 'icon': 'more', 'order': 999},
+]
+
+
+# 账本模板
+LEDGER_TEMPLATES = [
+    {
+        'name': '日常账本',
+        'description': '适合日常生活收支记录',
+        'icon': 'calendar',
+        'categories': ['工资', '奖金', '餐饮', '交通', '购物', '娱乐', '其他支出'],
+    },
+    {
+        'name': '旅行账本',
+        'description': '适合旅行游玩开支记录',
+        'icon': 'plane',
+        'categories': ['机票', '住宿', '餐饮', '交通', '门票', '购物', '其他支出'],
+    },
+    {
+        'name': '医疗账本',
+        'description': '适合医疗健康开支记录',
+        'icon': 'heart',
+        'categories': ['门诊', '住院', '药品', '检查', '其他支出'],
+    },
+    {
+        'name': '家庭账本',
+        'description': '适合家庭共同开支记录',
+        'icon': 'home',
+        'categories': ['工资', '餐饮', '教育', '医疗', '房租', '其他支出'],
+    },
 ]

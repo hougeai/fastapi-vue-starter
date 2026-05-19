@@ -1,9 +1,21 @@
 from typing import Optional
 from tortoise.expressions import Q
-from models.ledger import Ledger, Category
+from models.ledger import Ledger, Category, LedgerTemplate
 from models.enums import TransactionType
-from schemas.ledger import LedgerCreate, LedgerUpdate, CategoryCreate, CategoryUpdate
+from schemas.ledger import LedgerCreate, LedgerUpdate, CategoryCreate, CategoryUpdate, LedgerTemplateCreate, LedgerTemplateUpdate
 from .crud import CRUDBase
+
+
+# ============ LedgerTemplate Controller ============
+class LedgerTemplateController(CRUDBase[LedgerTemplate, LedgerTemplateCreate, LedgerTemplateUpdate]):
+    def __init__(self):
+        super().__init__(model=LedgerTemplate)
+
+    async def get_by_name(self, name: str) -> Optional[LedgerTemplate]:
+        return await self.model.filter(name=name).first()
+
+
+ledger_template_controller = LedgerTemplateController()
 
 
 # ============ Ledger Controller ============
@@ -23,6 +35,38 @@ class LedgerController(CRUDBase[Ledger, LedgerCreate, LedgerUpdate]):
         data['user_id'] = user_id
         obj = await self.model.create(**data)
         return obj
+
+    async def create_from_template(self, user_id: str, template_id: int, name: str, description: str = None) -> tuple[Ledger, list[Category]]:
+        """从模板创建账本及预设类别"""
+        template = await ledger_template_controller.get(id=template_id)
+        if not template:
+            raise ValueError('Template not found')
+
+        # 创建账本
+        ledger_data = LedgerCreate(
+            name=name,
+            description=description or template.description,
+            icon=template.icon,
+            template_id=template_id,
+        )
+        ledger = await self.create_for_user(user_id, ledger_data)
+
+        # 创建预设类别
+        created_categories = []
+        for cat_name in template.categories:
+            # 查找对应的系统类别获取 tx_type
+            sys_cat = await Category.filter(name=cat_name, is_system=True, user_id__isnull=True).first()
+            if sys_cat:
+                cat_data = CategoryCreate(
+                    name=sys_cat.name,
+                    tx_type=sys_cat.tx_type.value,
+                    icon=sys_cat.icon,
+                    order=sys_cat.order,
+                )
+                cat = await category_controller.create_for_user(user_id, cat_data)
+                created_categories.append(cat)
+
+        return ledger, created_categories
 
     async def set_default(self, ledger_id: int, user_id: str) -> Ledger:
         """设置默认账本"""

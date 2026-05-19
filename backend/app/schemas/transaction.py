@@ -13,7 +13,6 @@ class TransactionCreate(BaseModel):
 
 
 class TransactionUpdate(BaseModel):
-    id: int
     tx_type: Optional[int] = Field(default=None, description='类型')
     amount: Optional[float] = Field(default=None, description='金额')
     category_id: Optional[int] = Field(default=None, description='类别ID')
