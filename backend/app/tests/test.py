@@ -280,17 +280,13 @@ async def run_tests(token: str):
 
     # # 2. 账本模块
     # ledger_id = test_ledger(token)
+    # print(ledger_id)
 
     # # 3. 类别模块
-    test_category(token)
+    # test_category(token)
 
     # # 4. 交易模块
-    # if ledger_id:
-    #     test_transaction(token, ledger_id)
-
-    print('\n' + '=' * 60)
-    print('测试完成')
-    print('=' * 60)
+    test_transaction(token, 2)
 
 
 if __name__ == '__main__':

@@ -12,63 +12,7 @@ from schemas.base import Success, Fail
 router = APIRouter()
 
 
-# ============ Ledger 账本 ============
-@router.post('', summary='创建账本')
-async def create_ledger(
-    obj_in: LedgerCreate,
-    user: User = Depends(AuthControl.is_authed),
-):
-    ledger = await ledger_controller.create_for_user(user.user_id, obj_in)
-    return Success(data=await ledger.to_dict())
-
-
-@router.get('', summary='获取账本列表')
-async def list_ledgers(user: User = Depends(AuthControl.is_authed)):
-    ledgers = await ledger_controller.get_by_user(user.user_id)
-    data = [await l.to_dict() for l in ledgers]
-    return Success(data=data)
-
-
-@router.get('/{ledger_id}', summary='获取账本详情')
-async def get_ledger(ledger_id: int, user: User = Depends(AuthControl.is_authed)):
-    ledger = await ledger_controller.get(id=ledger_id)
-    if not ledger or ledger.user_id != user.user_id:
-        return Fail(msg='Ledger not found')
-    return Success(data=await ledger.to_dict())
-
-
-@router.put('/{ledger_id}', summary='更新账本')
-async def update_ledger(
-    ledger_id: int,
-    obj_in: LedgerUpdate,
-    user: User = Depends(AuthControl.is_authed),
-):
-    ledger = await ledger_controller.get(id=ledger_id)
-    if not ledger or ledger.user_id != user.user_id:
-        return Fail(msg='Ledger not found')
-    ledger = await ledger_controller.update(ledger_id, obj_in)
-    return Success(data=await ledger.to_dict())
-
-
-@router.delete('/{ledger_id}', summary='删除账本')
-async def delete_ledger(ledger_id: int, user: User = Depends(AuthControl.is_authed)):
-    ledger = await ledger_controller.get(id=ledger_id)
-    if not ledger or ledger.user_id != user.user_id:
-        return Fail(msg='账本不存在')
-    await ledger_controller.remove(ledger_id)
-    return Success(msg='Deleted Successfully')
-
-
-@router.post('/{ledger_id}/default', summary='设为默认账本')
-async def set_default_ledger(ledger_id: int, user: User = Depends(AuthControl.is_authed)):
-    ledger = await ledger_controller.get(id=ledger_id)
-    if not ledger or ledger.user_id != user.user_id:
-        return Fail(msg='Ledger not found')
-    ledger = await ledger_controller.set_default(ledger_id, user.user_id)
-    return Success(data=await ledger.to_dict())
-
-
-# ============ Category 类别 ============
+# ============ Category 类别（放在 ledger/{ledger_id} 之前，避免路由冲突） ============
 @router.post('/category', summary='创建类别')
 async def create_category(
     obj_in: CategoryCreate,
@@ -148,3 +92,59 @@ async def list_system_categories(
     categories = await category_controller.get_system_categories(type_enum)
     data = [await c.to_dict() for c in categories]
     return Success(data=data)
+
+
+# ============ Ledger 账本 ============
+@router.post('', summary='创建账本')
+async def create_ledger(
+    obj_in: LedgerCreate,
+    user: User = Depends(AuthControl.is_authed),
+):
+    ledger = await ledger_controller.create_for_user(user.user_id, obj_in)
+    return Success(data=await ledger.to_dict())
+
+
+@router.get('', summary='获取账本列表')
+async def list_ledgers(user: User = Depends(AuthControl.is_authed)):
+    ledgers = await ledger_controller.get_by_user(user.user_id)
+    data = [await l.to_dict() for l in ledgers]
+    return Success(data=data)
+
+
+@router.get('/{ledger_id}', summary='获取账本详情')
+async def get_ledger(ledger_id: int, user: User = Depends(AuthControl.is_authed)):
+    ledger = await ledger_controller.get(id=ledger_id)
+    if not ledger or ledger.user_id != user.user_id:
+        return Fail(msg='Ledger not found')
+    return Success(data=await ledger.to_dict())
+
+
+@router.put('/{ledger_id}', summary='更新账本')
+async def update_ledger(
+    ledger_id: int,
+    obj_in: LedgerUpdate,
+    user: User = Depends(AuthControl.is_authed),
+):
+    ledger = await ledger_controller.get(id=ledger_id)
+    if not ledger or ledger.user_id != user.user_id:
+        return Fail(msg='Ledger not found')
+    ledger = await ledger_controller.update(ledger_id, obj_in)
+    return Success(data=await ledger.to_dict())
+
+
+@router.delete('/{ledger_id}', summary='删除账本')
+async def delete_ledger(ledger_id: int, user: User = Depends(AuthControl.is_authed)):
+    ledger = await ledger_controller.get(id=ledger_id)
+    if not ledger or ledger.user_id != user.user_id:
+        return Fail(msg='账本不存在')
+    await ledger_controller.remove(ledger_id)
+    return Success(msg='Deleted Successfully')
+
+
+@router.post('/{ledger_id}/default', summary='设为默认账本')
+async def set_default_ledger(ledger_id: int, user: User = Depends(AuthControl.is_authed)):
+    ledger = await ledger_controller.get(id=ledger_id)
+    if not ledger or ledger.user_id != user.user_id:
+        return Fail(msg='Ledger not found')
+    ledger = await ledger_controller.set_default(ledger_id, user.user_id)
+    return Success(data=await ledger.to_dict())
