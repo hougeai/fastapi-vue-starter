@@ -40,10 +40,12 @@ export const useTransactionStore = defineStore('transaction', {
           end_date: params.endDate
         })
         if (res.code === 200) {
-          this.transactions = res.data?.data || []
-          this.total = res.data?.total || 0
-          this.page = res.data?.page || 1
-          this.pageSize = res.data?.page_size || 20
+          this.transactions = res.data || []
+          this.total = res.total || 0
+          this.page = res.page || 1
+          this.pageSize = res.page_size || 20
+        } else {
+          console.warn('fetchTransactions response:', res)
         }
         return res
       } finally {

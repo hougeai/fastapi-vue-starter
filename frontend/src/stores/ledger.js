@@ -31,7 +31,14 @@ export const useLedgerStore = defineStore('ledger', {
         const res = await api.getLedgerList()
         if (res.code === 200) {
           this.ledgers = res.data || []
-          // 如果没有当前选中账本且有账本列表，选中第一个
+          // 校验 currentLedger 是否仍在列表中
+          if (this.currentLedger) {
+            const exists = this.ledgers.find(l => l.id === this.currentLedger.id)
+            if (!exists) {
+              this.currentLedger = null
+            }
+          }
+          // 如果没有当前选中账本且有账本列表，选中默认或第一个
           if (!this.currentLedger && this.ledgers.length > 0) {
             this.currentLedger = this.ledgers.find(l => l.is_default) || this.ledgers[0]
           }

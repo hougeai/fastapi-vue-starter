@@ -147,8 +147,17 @@ async def create_ledger(
 
 @router.get('', summary='获取账本列表')
 async def list_ledgers(user: User = Depends(AuthControl.is_authed)):
+    from controllers.transaction import transaction_controller
     ledgers = await ledger_controller.get_by_user(user.user_id)
-    data = [await l.to_dict() for l in ledgers]
+    data = []
+    for l in ledgers:
+        ledger_dict = await l.to_dict()
+        # 附加交易统计
+        stats = await transaction_controller.summary(l.id)
+        ledger_dict['total_income'] = stats['total_income']
+        ledger_dict['total_expense'] = stats['total_expense']
+        ledger_dict['tx_count'] = stats['count']
+        data.append(ledger_dict)
     return Success(data=data)
 
 

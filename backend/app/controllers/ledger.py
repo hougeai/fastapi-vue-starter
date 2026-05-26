@@ -51,20 +51,13 @@ class LedgerController(CRUDBase[Ledger, LedgerCreate, LedgerUpdate]):
         )
         ledger = await self.create_for_user(user_id, ledger_data)
 
-        # 创建预设类别
+        # 模板类别全部来自系统预设，无需为用户创建自定义类别
+        # 直接返回模板对应的系统预设类别
         created_categories = []
         for cat_name in template.categories:
-            # 查找对应的系统类别获取 tx_type
             sys_cat = await Category.filter(name=cat_name, is_system=True, user_id__isnull=True).first()
             if sys_cat:
-                cat_data = CategoryCreate(
-                    name=sys_cat.name,
-                    tx_type=sys_cat.tx_type.value,
-                    icon=sys_cat.icon,
-                    order=sys_cat.order,
-                )
-                cat = await category_controller.create_for_user(user_id, cat_data)
-                created_categories.append(cat)
+                created_categories.append(sys_cat)
 
         return ledger, created_categories
 

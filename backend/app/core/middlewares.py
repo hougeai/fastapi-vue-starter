@@ -72,7 +72,8 @@ class HttpAuditLogMiddleware(BaseHTTPMiddleware):
             else:
                 try:
                     body = await request.json()
-                    args.update(body)
+                    if body and isinstance(body, dict):
+                        args.update(body)
                 except json.JSONDecodeError:
                     pass
 

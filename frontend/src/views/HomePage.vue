@@ -33,7 +33,7 @@ const fetchData = async () => {
   loading.value = true
   try {
     await Promise.all([
-      transactionStore.fetchTransactions({ ledgerId: currentLedger.value.id, pageSize: 5 }),
+      transactionStore.fetchTransactions({ ledgerId: currentLedger.value.id, pageSize: 3 }),
       transactionStore.fetchSummary(currentLedger.value.id)
     ])
   } finally {
@@ -203,7 +203,11 @@ onMounted(async () => {
                   </div>
                   <div>
                     <div class="text-sm text-[var(--color-text-1)]">{{ tx.remark || '无备注' }}</div>
-                    <div class="text-xs text-[var(--color-text-3)] mt-0.5">{{ tx.tx_date }}</div>
+                    <div class="text-xs text-[var(--color-text-3)] mt-0.5">
+                      交易：{{ tx.tx_date }}
+                      <span class="mx-1">|</span>
+                      记账：{{ tx.create_at?.split(' ')[0] || '-' }}
+                    </div>
                   </div>
                 </div>
                 <div
