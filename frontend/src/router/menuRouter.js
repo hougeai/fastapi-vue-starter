@@ -2,6 +2,7 @@ import IconHome from '~icons/material-symbols/home'
 import IconWallet from '~icons/material-symbols/account-balance-wallet-outline'
 import IconReceipt from '~icons/material-symbols/receipt-long-outline'
 import IconBarChart from '~icons/material-symbols/bar-chart-4-bars'
+import IconAI from '~icons/material-symbols/auto-awesome-outline'
 import IconUser from '~icons/material-symbols/person'
 
 export const menuRouter = [
@@ -22,6 +23,15 @@ export const menuRouter = [
       icon: markRaw(IconWallet)
     },
     component: () => import('@/views/LedgerPage.vue')
+  },
+  {
+    path: 'ai',
+    name: 'AiBookkeepingPage',
+    meta: {
+      title: 'AI记账',
+      icon: markRaw(IconAI)
+    },
+    component: () => import('@/views/AiBookkeepingPage.vue')
   },
   {
     path: 'transactions',

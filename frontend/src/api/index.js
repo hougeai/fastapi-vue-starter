@@ -76,4 +76,18 @@ export default {
   updateTransaction: (transactionId, data) => request.put(`/transaction/${transactionId}`, data),
   // 删除交易记录
   deleteTransaction: transactionId => request.delete(`/transaction/${transactionId}`),
+
+  // ============ AI 记账 ============
+  // 自然语言解析（LLM 响应较慢，设置60秒超时）
+  aiParseText: data => request.post('/ai/parse_text', data, { timeout: 60000 }),
+  // 语音解析
+  aiParseVoice: formData => request.post('/ai/parse_voice', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 60000
+  }),
+  // 图片解析
+  aiParseImage: formData => request.post('/ai/parse_image', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 60000
+  }),
 }

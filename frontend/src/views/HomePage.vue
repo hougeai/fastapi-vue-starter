@@ -150,12 +150,12 @@ onMounted(async () => {
             </div>
             <div
               class="flex flex-col items-center py-3 rounded-lg cursor-pointer transition-all hover:bg-[var(--color-fill-2)]"
-              @click="router.push('/ledgers')"
+              @click="router.push('/ai')"
             >
-              <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center mb-2">
-                <icon-material-symbols:account-balance-wallet-outline class="text-xl text-green-500" />
+              <div class="w-10 h-10 rounded-full bg-cyan-100 flex items-center justify-center mb-2">
+                <icon-material-symbols:auto-awesome-outline class="text-xl text-cyan-500" />
               </div>
-              <span class="text-xs text-[var(--color-text-2)]">账本</span>
+              <span class="text-xs text-[var(--color-text-2)]">AI记账</span>
             </div>
             <div
               class="flex flex-col items-center py-3 rounded-lg cursor-pointer transition-all hover:bg-[var(--color-fill-2)]"
@@ -170,10 +170,10 @@ onMounted(async () => {
               class="flex flex-col items-center py-3 rounded-lg cursor-pointer transition-all hover:bg-[var(--color-fill-2)]"
               @click="router.push('/ledgers')"
             >
-              <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center mb-2">
-                <icon-material-symbols:dashboard-customize-outline class="text-xl text-purple-500" />
+              <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center mb-2">
+                <icon-material-symbols:account-balance-wallet-outline class="text-xl text-green-500" />
               </div>
-              <span class="text-xs text-[var(--color-text-2)]">模板</span>
+              <span class="text-xs text-[var(--color-text-2)]">账本</span>
             </div>
           </div>
         </div>

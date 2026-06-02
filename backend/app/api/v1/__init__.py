@@ -9,6 +9,7 @@ from .menus import router as menus_router
 from .auditlog import router as auditlog_router
 from .ledger import router as ledger_router
 from .transaction import router as transaction_router
+from .ai import router as ai_router
 
 
 v1_router = APIRouter()
@@ -22,3 +23,4 @@ v1_router.include_router(auditlog_router, tags=['审计日志模块'], prefix='/
 
 v1_router.include_router(ledger_router, tags=['账本模块'], prefix='/ledger')
 v1_router.include_router(transaction_router, tags=['交易模块'], prefix='/transaction')
+v1_router.include_router(ai_router, tags=['AI记账模块'], prefix='/ai')
