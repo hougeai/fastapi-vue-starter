@@ -68,6 +68,8 @@ export default {
   getTransactionList: params => request.get('/transaction', { params }),
   // 获取收支汇总
   getTransactionSummary: params => request.get('/transaction/summary', { params }),
+  // 获取类别汇总
+  getCategorySummary: params => request.get('/transaction/category_summary', { params }),
   // 获取交易记录详情
   getTransaction: transactionId => request.get(`/transaction/${transactionId}`),
   // 更新交易记录

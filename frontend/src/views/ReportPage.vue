@@ -3,6 +3,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useLedgerStore } from '@/stores/ledger'
 import { useTransactionStore } from '@/stores/transaction'
+import api from '@/api'
 import dayjs from 'dayjs'
 
 const router = useRouter()
@@ -13,6 +14,82 @@ const loading = ref(false)
 const currentLedger = computed(() => ledgerStore.currentLedger)
 const ledgers = computed(() => ledgerStore.ledgers)
 const showLedgerDropdown = ref(false)
+
+// 类别汇总数据
+const categoryData = ref([])
+
+// 收入类别汇总
+const incomeCategories = computed(() => categoryData.value.filter(c => c.tx_type === 1))
+// 支出类别汇总
+const expenseCategories = computed(() => categoryData.value.filter(c => c.tx_type === 2))
+
+// 饼图颜色
+const pieColors = ['#1668DC', '#0FC6C2', '#FF7D00', '#F53F3F', '#722ED1', '#3491FA', '#F77234', '#D91AD9', '#00B42A', '#FFCD00']
+
+// 获取类别汇总
+const fetchCategorySummary = async () => {
+  if (!currentLedger.value) return
+  let startDate, endDate
+  if (reportMode.value === 'month') {
+    startDate = dayjs(`${selectedYear.value}-${selectedMonth.value}-01`).startOf('month').format('YYYY-MM-DD')
+    endDate = dayjs(`${selectedYear.value}-${selectedMonth.value}-01`).endOf('month').format('YYYY-MM-DD')
+  } else {
+    startDate = `${selectedYear.value}-01-01`
+    endDate = `${selectedYear.value}-12-31`
+  }
+  try {
+    const res = await api.getCategorySummary({
+      ledger_id: currentLedger.value.id,
+      start_date: startDate,
+      end_date: endDate
+    })
+    if (res.code === 200) {
+      categoryData.value = res.data || []
+    }
+  } catch (e) {
+    console.error('获取类别汇总失败:', e)
+  }
+}
+
+// 饼图 SVG path 计算
+const getPiePaths = (items) => {
+  if (!items.length) return []
+  const total = items.reduce((sum, item) => sum + item.amount, 0)
+  if (total <= 0) return []
+
+  const cx = 50, cy = 50, r = 45
+
+  // 单个类别：用两个半圆弧拼成完整圆
+  if (items.length === 1) {
+    const path = `M ${cx} ${cy} L ${cx} ${cy - r} A ${r} ${r} 0 1 1 ${cx} ${cy + r} A ${r} ${r} 0 1 1 ${cx} ${cy - r} Z`
+    return [{ path, color: pieColors[0], item: items[0] }]
+  }
+
+  const paths = []
+  let startAngle = -Math.PI / 2 // 从12点方向开始
+
+  items.forEach((item, index) => {
+    const angle = (item.amount / total) * Math.PI * 2
+    const endAngle = startAngle + angle
+    const largeArc = angle > Math.PI ? 1 : 0
+
+    const x1 = cx + r * Math.cos(startAngle)
+    const y1 = cy + r * Math.sin(startAngle)
+    const x2 = cx + r * Math.cos(endAngle)
+    const y2 = cy + r * Math.sin(endAngle)
+
+    const path = `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z`
+    paths.push({ path, color: pieColors[index % pieColors.length], item })
+
+    startAngle = endAngle
+  })
+  return paths
+}
+
+// 收入饼图
+const incomePiePaths = computed(() => getPiePaths(incomeCategories.value))
+// 支出饼图
+const expensePiePaths = computed(() => getPiePaths(expenseCategories.value))
 
 // 报表模式：month | year
 const reportMode = ref('month')
@@ -57,6 +134,7 @@ const fetchData = async () => {
     } else {
       await fetchYearlySummary()
     }
+    await fetchCategorySummary()
   } finally {
     loading.value = false
   }
@@ -335,14 +413,6 @@ watch(reportMode, () => {
             </div>
 
             <!-- 月度支出排行 -->
-            <div v-if="topExpenseMonth" class="bg-[var(--color-bg-2)] rounded-xl shadow-sm p-4 mb-4">
-              <div class="text-sm font-medium text-[var(--color-text-1)] mb-2">支出最高月份</div>
-              <div class="flex items-center justify-between">
-                <span class="text-[var(--color-text-2)]">{{ topExpenseMonth.label }}</span>
-                <span class="font-semibold text-red-500">¥{{ formatMoney(topExpenseMonth.total_expense) }}</span>
-              </div>
-            </div>
-
             <!-- 逐月柱状图 -->
             <div class="bg-[var(--color-bg-2)] rounded-xl shadow-sm overflow-hidden">
               <div class="px-4 py-3 border-b border-[var(--color-border-1)]">
@@ -359,7 +429,7 @@ watch(reportMode, () => {
                   </span>
                 </div>
                 <!-- 柱状图 -->
-                <div class="flex items-end gap-1" style="height: 180px;">
+                <div class="flex items-end gap-1" style="height: 220px;">
                   <div
                     v-for="m in yearlyData"
                     :key="m.month"
@@ -367,35 +437,93 @@ watch(reportMode, () => {
                   >
                     <div class="flex gap-0.5 items-end w-full justify-center" style="height: 160px;">
                       <!-- 收入柱 -->
-                      <div
-                        class="w-2.5 rounded-t transition-all duration-300 bg-green-400"
-                        :style="{ height: `${getChartHeight(m.total_income)}px` }"
-                      />
+                      <div class="relative flex flex-col items-center justify-end">
+                        <span v-if="m.total_income" class="text-green-500 mb-0.5 whitespace-nowrap" style="font-size: 8px;">{{ m.total_income >= 10000 ? (m.total_income / 10000).toFixed(1) + 'w' : m.total_income.toFixed(0) }}</span>
+                        <div
+                          class="w-2.5 rounded-t transition-all duration-300 bg-green-400"
+                          :style="{ height: `${getChartHeight(m.total_income)}px` }"
+                        />
+                      </div>
                       <!-- 支出柱 -->
-                      <div
-                        class="w-2.5 rounded-t transition-all duration-300 bg-red-400"
-                        :style="{ height: `${getChartHeight(m.total_expense)}px` }"
-                      />
+                      <div class="relative flex flex-col items-center justify-end">
+                        <span v-if="m.total_expense" class="text-red-500 mb-0.5 whitespace-nowrap" style="font-size: 8px;">{{ m.total_expense >= 10000 ? (m.total_expense / 10000).toFixed(1) + 'w' : m.total_expense.toFixed(0) }}</span>
+                        <div
+                          class="w-2.5 rounded-t transition-all duration-300 bg-red-400"
+                          :style="{ height: `${getChartHeight(m.total_expense)}px` }"
+                        />
+                      </div>
                     </div>
                     <span class="text-xs text-[var(--color-text-3)] mt-1">{{ m.month }}月</span>
                   </div>
                 </div>
               </div>
-              <!-- 月度数据表 -->
-              <div class="border-t border-[var(--color-border-1)]">
-                <div
-                  v-for="m in yearlyData"
-                  :key="'row-' + m.month"
-                  class="flex items-center justify-between px-4 py-2.5 border-b border-[var(--color-border-1)] last:border-0 text-sm"
-                >
-                  <span class="text-[var(--color-text-1)] w-14">{{ m.label }}</span>
-                  <span class="text-green-500 flex-1 text-right">+{{ formatMoney(m.total_income) }}</span>
-                  <span class="text-red-500 flex-1 text-right">-{{ formatMoney(m.total_expense) }}</span>
-                  <span class="text-[var(--color-text-2)] w-20 text-right">{{ m.count }}笔</span>
+            </div>
+          </template>
+
+          <!-- ====== 类别分析 ====== -->
+          <div class="mt-4">
+            <div class="bg-[var(--color-bg-2)] rounded-xl shadow-sm p-4">
+              <div class="text-sm font-medium text-[var(--color-text-1)] mb-4">类别分析</div>
+              <div class="grid grid-cols-2 gap-4">
+                <!-- 收入类别 -->
+                <div>
+                  <div class="text-xs text-[var(--color-text-3)] mb-2 text-center">收入构成</div>
+                  <div v-if="incomeCategories.length" class="flex items-center justify-center gap-3">
+                    <svg viewBox="0 0 100 100" class="w-24 h-24 flex-shrink-0">
+                      <path
+                        v-for="(seg, idx) in incomePiePaths"
+                        :key="idx"
+                        :d="seg.path"
+                        :fill="seg.color"
+                        stroke="white"
+                        stroke-width="0.5"
+                      />
+                    </svg>
+                    <div class="space-y-1.5">
+                      <div
+                        v-for="(cat, idx) in incomeCategories"
+                        :key="cat.category_name"
+                        class="flex items-center text-xs gap-1"
+                      >
+                        <span class="w-2 h-2 rounded-full flex-shrink-0" :style="{ backgroundColor: pieColors[idx % pieColors.length] }" />
+                        <span class="text-[var(--color-text-2)]">{{ cat.category_name }}</span>
+                        <span class="text-[var(--color-text-3)]">{{ ((cat.amount / incomeCategories.reduce((s, c) => s + c.amount, 0)) * 100).toFixed(1) }}%</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div v-else class="text-center py-6 text-xs text-[var(--color-text-4)]">暂无收入数据</div>
+                </div>
+                <!-- 支出类别 -->
+                <div>
+                  <div class="text-xs text-[var(--color-text-3)] mb-2 text-center">支出构成</div>
+                  <div v-if="expenseCategories.length" class="flex items-center justify-center gap-3">
+                    <svg viewBox="0 0 100 100" class="w-24 h-24 flex-shrink-0">
+                      <path
+                        v-for="(seg, idx) in expensePiePaths"
+                        :key="idx"
+                        :d="seg.path"
+                        :fill="seg.color"
+                        stroke="white"
+                        stroke-width="0.5"
+                      />
+                    </svg>
+                    <div class="space-y-1.5">
+                      <div
+                        v-for="(cat, idx) in expenseCategories"
+                        :key="cat.category_name"
+                        class="flex items-center text-xs gap-1"
+                      >
+                        <span class="w-2 h-2 rounded-full flex-shrink-0" :style="{ backgroundColor: pieColors[idx % pieColors.length] }" />
+                        <span class="text-[var(--color-text-2)]">{{ cat.category_name }}</span>
+                        <span class="text-[var(--color-text-3)]">{{ ((cat.amount / expenseCategories.reduce((s, c) => s + c.amount, 0)) * 100).toFixed(1) }}%</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div v-else class="text-center py-6 text-xs text-[var(--color-text-4)]">暂无支出数据</div>
                 </div>
               </div>
             </div>
-          </template>
+          </div>
         </template>
 
         <!-- 无账本 -->

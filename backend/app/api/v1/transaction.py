@@ -67,6 +67,23 @@ async def get_summary(
     return Success(data=summary)
 
 
+@router.get('/category_summary', summary='按类别汇总')
+async def get_category_summary(
+    ledger_id: int = Query(...),
+    tx_type: Optional[int] = Query(None, alias='type'),
+    start_date: Optional[date] = Query(None),
+    end_date: Optional[date] = Query(None),
+    user: User = Depends(AuthControl.is_authed),
+):
+    ledger = await ledger_controller.get(id=ledger_id)
+    if not ledger or ledger.user_id != user.user_id:
+        return Fail(msg='账本不存在')
+
+    type_enum = TransactionType(tx_type) if tx_type else None
+    data = await transaction_controller.category_summary(ledger_id, type_enum, start_date, end_date)
+    return Success(data=data)
+
+
 @router.get('/{transaction_id}', summary='交易记录详情')
 async def get_transaction(transaction_id: int, user: User = Depends(AuthControl.is_authed)):
     tx = await transaction_controller.get(id=transaction_id)
