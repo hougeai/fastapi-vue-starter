@@ -4,6 +4,11 @@ from .config import settings
 from .log import logger
 
 model_dict = {
+    'agnes-2.0-flash': {
+        'api_key': settings.AGNES_KEY,
+        'base_url': 'https://apihub.agnes-ai.com/v1',
+        'model_name': 'agnes-2.0-flash',
+    },
     'deepseek-ai/DeepSeek-V4-Flash': {
         'api_key': settings.SF_KEY,
         'base_url': 'https://api.siliconflow.cn/v1',

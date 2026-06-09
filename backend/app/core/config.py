@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     # 外部API-KEY配置
     SF_KEY: str = os.getenv('SF_KEY', '')
     GLM_KEY: str = os.getenv('GLM_KEY', '')
+    AGNES_KEY: str = os.getenv('AGNES_KEY', '')
     # 超级管理员配置
     SUPER_ADMIN_NAME: str = os.getenv('SUPER_ADMIN_NAME', '')
     SUPER_ADMIN_PHONE: str = os.getenv('SUPER_ADMIN_PHONE', '')

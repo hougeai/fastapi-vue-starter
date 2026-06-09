@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 
 from core.dependency import AuthControl
 from models.user import User
-from controllers.ai import parse_text, parse_voice, parse_image
+from controllers.ai import parse_text, asr_voice, parse_image
 from schemas.base import Success, Fail
 
 router = APIRouter()
@@ -25,17 +25,14 @@ async def ai_parse_text(
     return Success(data=result['data'])
 
 
-@router.post('/parse_voice', summary='语音解析为交易记录')
+@router.post('/parse_voice', summary='语音识别（ASR）')
 async def ai_parse_voice(
-    ledger_id: int = Form(..., description='账本ID'),
     file: UploadFile = File(...),
     user: User = Depends(AuthControl.is_authed),
 ):
-    result = await parse_voice(file, ledger_id)
+    """语音识别：只做 ASR，返回识别文本，用户确认后再调 parse_text"""
+    result = await asr_voice(file)
     if 'error' in result:
-        # 如果有识别文本但LLM解析失败，仍返回识别文本
-        if 'data' in result and result['data'].get('transcript'):
-            return Success(data=result['data'])
         return Fail(msg=result['error'])
     return Success(data=result['data'])
 

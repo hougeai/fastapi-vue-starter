@@ -79,7 +79,8 @@ const handleTextParse = async () => {
       parseError.value = res.msg || '无法识别交易信息，请手动输入'
     }
   } catch (e) {
-    parseError.value = '解析失败，请稍后重试或手动输入'
+    // http.js 拦截器已弹过 AMessage，这里提取具体错误信息显示在页面中
+    parseError.value = e?.message || '解析失败，请换种说法或手动输入'
   } finally {
     textLoading.value = false
   }
@@ -117,44 +118,46 @@ const handleVoiceParse = async (blob) => {
   if (!currentLedger.value) return
   voiceLoading.value = true
   parseError.value = ''
-  parsedResult.value = null
+  voiceTranscript.value = ''
   try {
     const formData = new FormData()
     formData.append('file', blob)
-    formData.append('ledger_id', currentLedger.value.id)
     const res = await api.aiParseVoice(formData)
-    if (res.code === 200 && res.data) {
-      voiceTranscript.value = res.data.transcript || ''
-      if (res.data.parsed) {
-        parsedResult.value = res.data.parsed
-        fillConfirmForm(res.data.parsed)
-        confirmVisible.value = true
-      } else {
-        parseError.value = '语音识别成功但无法解析为交易记录'
-      }
+    if (res.code === 200 && res.data?.transcript) {
+      voiceTranscript.value = res.data.transcript
     } else {
       parseError.value = res.msg || '语音识别失败'
     }
   } catch (e) {
-    parseError.value = '语音解析失败，请稍后重试'
+    parseError.value = '语音识别失败，请稍后重试'
   } finally {
     voiceLoading.value = false
   }
 }
 
+// 用户确认语音识别结果后，调用文本解析
+const handleVoiceConfirm = async () => {
+  if (!voiceTranscript.value || !currentLedger.value) return
+  textInput.value = voiceTranscript.value
+  await handleTextParse()
+}
+
 // ======== 图片上传 ========
 const handleImageSelect = (file) => {
-  if (file && file.file) {
-    imageFile.value = file.file
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      imagePreview.value = e.target.result
-    }
-    reader.readAsDataURL(file.file)
-    // 自动解析
-    handleImageParse(file.file)
+  // 兼容 Arco Design Upload 的 fileItem 格式
+  const rawFile = file?.file || file
+  if (!rawFile) return false
+
+  imageFile.value = rawFile
+  parseError.value = ''
+  parsedResult.value = null
+
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    imagePreview.value = e.target.result
   }
-  return false
+  reader.readAsDataURL(rawFile)
+  return false  // 阻止自动上传
 }
 
 const clearImage = () => {
@@ -164,14 +167,14 @@ const clearImage = () => {
   parseError.value = ''
 }
 
-const handleImageParse = async (file) => {
-  if (!currentLedger.value) return
+const handleImageParse = async () => {
+  if (!currentLedger.value || !imageFile.value) return
   imageLoading.value = true
   parseError.value = ''
   parsedResult.value = null
   try {
     const formData = new FormData()
-    formData.append('file', file)
+    formData.append('file', imageFile.value)
     formData.append('ledger_id', currentLedger.value.id)
     const res = await api.aiParseImage(formData)
     if (res.code === 200 && res.data?.parsed) {
@@ -353,10 +356,26 @@ onMounted(async () => {
               </span>
             </div>
 
-            <!-- 语音识别结果 -->
-            <div v-if="voiceTranscript" class="mt-4 bg-[var(--color-fill-2)] rounded-lg p-3">
-              <div class="text-xs text-[var(--color-text-3)] mb-1">识别结果：</div>
-              <div class="text-sm text-[var(--color-text-1)]">{{ voiceTranscript }}</div>
+            <!-- 语音识别结果 + 确认按钮 -->
+            <div v-if="voiceTranscript" class="mt-4">
+              <div class="bg-[var(--color-fill-2)] rounded-lg p-3">
+                <div class="text-xs text-[var(--color-text-3)] mb-1">识别结果：</div>
+                <a-input v-model="voiceTranscript" :auto-size="{ minRows: 1, maxRows: 3 }" allow-clear />
+              </div>
+              <div class="flex justify-center gap-2 mt-3">
+                <a-button
+                  type="primary"
+                  :loading="textLoading"
+                  :disabled="textLoading"
+                  @click="handleVoiceConfirm"
+                >
+                  <template #icon><icon-material-symbols:auto-awesome-outline /></template>
+                  AI 解析
+                </a-button>
+                <a-button @click="voiceTranscript = ''">
+                  重新录音
+                </a-button>
+              </div>
             </div>
 
             <!-- 加载中 -->
@@ -372,19 +391,23 @@ onMounted(async () => {
           <div class="bg-[var(--color-bg-2)] rounded-xl shadow-sm p-4">
             <div class="text-sm font-medium text-[var(--color-text-1)] mb-3">上传小票/账单</div>
 
-            <!-- 图片预览 -->
-            <div v-if="imagePreview" class="relative mb-3">
+            <!-- 图片预览 + 确认按钮 -->
+            <div v-if="imagePreview" class="mb-3">
               <img :src="imagePreview" class="w-full rounded-lg max-h-60 object-contain bg-[var(--color-fill-2)]" />
-              <a-button
-                type="primary"
-                shape="circle"
-                size="mini"
-                status="danger"
-                class="absolute top-2 right-2"
-                @click="clearImage"
-              >
-                <template #icon><icon-material-symbols:close /></template>
-              </a-button>
+              <div class="flex justify-center gap-2 mt-3">
+                <a-button
+                  type="primary"
+                  :loading="imageLoading"
+                  :disabled="imageLoading"
+                  @click="handleImageParse"
+                >
+                  <template #icon><icon-material-symbols:auto-awesome-outline /></template>
+                  AI 识别
+                </a-button>
+                <a-button @click="clearImage">
+                  重新选择
+                </a-button>
+              </div>
             </div>
 
             <!-- 上传区域 -->
@@ -405,7 +428,7 @@ onMounted(async () => {
               </template>
             </a-upload>
 
-            <!-- 加载中 -->
+            <!-- 识别中 -->
             <div v-if="imageLoading" class="mt-3 text-center">
               <a-spin :loading="true" />
               <p class="text-sm text-[var(--color-text-3)] mt-2">正在识别图片...</p>
